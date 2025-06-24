@@ -1,16 +1,16 @@
 import os
 from typing import Optional
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, Email, To, Content
+import resend
 from datetime import datetime
 
 class EmailService:
-    """Servicio para manejo de emails usando SendGrid."""
+    """Servicio para manejo de emails usando Resend."""
     
     def __init__(self):
-        self.api_key = os.getenv("SENDGRID_API_KEY")
+        self.api_key = os.getenv("RESEND_API_KEY")
         self.from_email = os.getenv("FROM_EMAIL", "gerardo_mayel_fernandez_alamilla@chiefdataaiofficer.com")
-        self.client = SendGridAPIClient(api_key=self.api_key) if self.api_key else None
+        if self.api_key:
+            resend.api_key = self.api_key
     
     def send_email(
         self,
@@ -20,7 +20,7 @@ class EmailService:
         content_type: str = "text/plain"
     ) -> bool:
         """
-        Envía un email usando SendGrid.
+        Envía un email usando Resend.
         
         Args:
             to_email: Email del destinatario
@@ -31,22 +31,25 @@ class EmailService:
         Returns:
             bool: True si el email se envió correctamente, False en caso contrario
         """
-        if not self.client:
-            print("SendGrid no está configurado. Email no enviado.")
+        if not self.api_key:
+            print("Resend no está configurado. Email no enviado.")
             return False
         
         try:
-            message = Mail(
-                from_email=self.from_email,
-                to_emails=to_email,
-                subject=subject,
-                plain_text_content=content if content_type == "text/plain" else None,
-                html_content=content if content_type == "text/html" else None
-            )
+            email_data = {
+                "from": self.from_email,
+                "to": to_email,
+                "subject": subject
+            }
             
-            response = self.client.send(message)
-            print(f"Email enviado exitosamente. Status code: {response.status_code}")
-            return response.status_code == 202
+            if content_type == "text/html":
+                email_data["html"] = content
+            else:
+                email_data["text"] = content
+            
+            response = resend.Emails.send(email_data)
+            print(f"Email enviado exitosamente. ID: {response.get('id', 'N/A')}")
+            return True
             
         except Exception as e:
             print(f"Error enviando email: {str(e)}")
