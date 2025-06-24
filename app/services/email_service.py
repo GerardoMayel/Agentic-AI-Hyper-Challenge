@@ -9,7 +9,7 @@ class EmailService:
     
     def __init__(self):
         self.api_key = os.getenv("SENDGRID_API_KEY")
-        self.from_email = os.getenv("FROM_EMAIL", "noreply@tuapp.com")
+        self.from_email = os.getenv("FROM_EMAIL", "gerardo_mayel_fernandez_alamilla@chiefdataaiofficer.com")
         self.client = SendGridAPIClient(api_key=self.api_key) if self.api_key else None
     
     def send_email(
