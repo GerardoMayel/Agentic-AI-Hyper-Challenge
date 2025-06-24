@@ -5,6 +5,8 @@ Prueba el envío y recepción de correos usando SendGrid
 """
 
 import os
+from dotenv import load_dotenv
+load_dotenv()
 import sys
 import time
 import smtplib

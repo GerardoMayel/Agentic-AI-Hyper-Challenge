@@ -5,6 +5,8 @@ Para validaciones básicas del sistema de correo
 """
 
 import os
+from dotenv import load_dotenv
+load_dotenv()
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 from datetime import datetime
