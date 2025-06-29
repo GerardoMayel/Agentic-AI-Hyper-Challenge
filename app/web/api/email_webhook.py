@@ -1,303 +1,167 @@
-from fastapi import Request, Response, HTTPException, Depends
-from sqlalchemy.orm import Session
-from typing import Dict, Any, Optional
+from fastapi import Request, Response, HTTPException, APIRouter, Form, File, UploadFile, Header
+from typing import Dict, Any, List, Optional
 import json
 import os
-import re
 from datetime import datetime
+from dotenv import load_dotenv
+import base64
+import hmac
+import hashlib
 
-# Importar servicios
-from app.services.email_service import email_service
-from app.services.llm_service import llm_service
+load_dotenv()
 
-# Importar funciones de base de datos
-from app.core.database import get_db
-from app.core import crud
-from app.core.models import StatusEnum
+router = APIRouter()
 
-async def email_webhook(request: Request, db: Session = Depends(get_db)):
+def verify_resend_signature(request_body: bytes, signature: str) -> bool:
     """
-    Endpoint para recibir webhooks de SendGrid sobre correos entrantes.
-    
-    Este endpoint procesa los emails recibidos y crea siniestros automáticamente
-    basándose en el contenido del email.
-    
-    Args:
-        request: Objeto de petición de FastAPI
-        db: Sesión de base de datos inyectada por FastAPI
+    Verifica que el webhook viene realmente de Resend usando el signing secret.
     """
-    print("📧 Webhook de email recibido - Procesando siniestro...")
+    webhook_secret = os.getenv('RESEND_WEBHOOK_SECRET')
+    
+    if not webhook_secret or webhook_secret == 'your_resend_webhook_secret_here':
+        print("⚠️ RESEND_WEBHOOK_SECRET no configurado, saltando verificación")
+        return True
     
     try:
-        # 1. Verificar la firma del webhook de SendGrid (muy importante para seguridad)
-        signature = request.headers.get("X-Twilio-Email-Event-Webhook-Signature")
-        timestamp = request.headers.get("X-Twilio-Email-Event-Webhook-Timestamp")
+        # Crear el hash esperado
+        expected_signature = hmac.new(
+            webhook_secret.encode('utf-8'),
+            request_body,
+            hashlib.sha256
+        ).hexdigest()
         
-        # Obtener el cuerpo de la petición
-        body = await request.body()
-        payload = body.decode('utf-8')
-        
-        # Verificar firma (implementar según documentación de SendGrid)
-        if not email_service.verify_webhook_signature(payload, signature or "", timestamp or ""):
-            print("❌ Firma del webhook inválida")
-            raise HTTPException(status_code=401, detail="Invalid signature")
-        
-        # 2. Parsear el cuerpo de la petición
-        # SendGrid envía los datos como multipart/form-data
-        form_data = await request.form()
-        
-        # Extraer información del email
-        sender = form_data.get('from', '')
-        recipient = form_data.get('to', '')
-        subject = form_data.get('subject', '')
-        body_text = form_data.get('text', '')
-        body_html = form_data.get('html', '')
-        
-        print(f"📨 Email recibido de: {sender}")
-        print(f"📋 Asunto: {subject}")
-        print(f"📝 Contenido: {body_text[:200]}...")
-        
-        # 3. Extraer número de póliza del email usando IA
-        policy_number = await extract_policy_number_from_email(subject, body_text)
-        
-        if not policy_number:
-            print("❌ No se pudo extraer el número de póliza del email")
-            # Registrar comunicación de error
-            await log_error_communication(db, sender, subject, body_text, "No se pudo extraer número de póliza")
-            return Response(
-                content=json.dumps({
-                    "status": "error",
-                    "message": "No se pudo extraer el número de póliza del email"
-                }),
-                status_code=200,
-                media_type="application/json"
-            )
-        
-        print(f"🔍 Número de póliza extraído: {policy_number}")
-        
-        # 4. Buscar la póliza en la base de datos
-        policy = crud.get_policy_by_number(db, policy_number)
-        
-        if not policy:
-            print(f"❌ Póliza no encontrada: {policy_number}")
-            # Registrar comunicación de error
-            await log_error_communication(db, sender, subject, body_text, f"Póliza no encontrada: {policy_number}")
-            return Response(
-                content=json.dumps({
-                    "status": "error",
-                    "message": f"Póliza no encontrada: {policy_number}"
-                }),
-                status_code=200,
-                media_type="application/json"
-            )
-        
-        print(f"✅ Póliza encontrada: {policy.policy_number} - Cliente: {policy.customer_email}")
-        
-        # 5. Crear el siniestro
-        claim = crud.create_claim(db, policy)
-        print(f"✅ Siniestro creado: {claim.claim_number}")
-        
-        # 6. Generar resumen de IA del siniestro
-        ai_summary = await generate_claim_summary(subject, body_text)
-        if ai_summary:
-            crud.update_claim_summary(db, claim.id, ai_summary)
-            print(f"✅ Resumen de IA generado")
-        
-        # 7. Registrar la comunicación original
-        communication = crud.log_communication(
-            db=db,
-            claim_id=claim.id,
-            channel="EMAIL_INBOUND",
-            content={
-                "subject": subject,
-                "body": body_text,
-                "html_body": body_html,
-                "original_sender": sender,
-                "original_recipient": recipient
-            },
-            direction="inbound",
-            sender=sender,
-            recipient=recipient,
-            subject=subject
-        )
-        print(f"✅ Comunicación registrada: ID {communication.id}")
-        
-        # 8. Enviar acuse de recibo al cliente
-        email_sent = email_service.send_acknowledgement(
-            to_email=sender,
-            claim_number=claim.claim_number,
-            customer_name=policy.customer_name
-        )
-        
-        if email_sent:
-            print(f"✅ Acuse de recibo enviado a {sender}")
-            
-            # Registrar la comunicación de salida
-            crud.log_communication(
-                db=db,
-                claim_id=claim.id,
-                channel="EMAIL_OUTBOUND",
-                content={
-                    "type": "acknowledgement",
-                    "claim_number": claim.claim_number
-                },
-                direction="outbound",
-                sender=email_service.from_email,
-                recipient=sender,
-                subject=f"Acuse de Recibo - Siniestro {claim.claim_number}"
-            )
-        else:
-            print(f"❌ Error enviando acuse de recibo a {sender}")
-        
-        # 9. Respuesta exitosa
-        return Response(
-            content=json.dumps({
-                "status": "success",
-                "message": "Siniestro procesado exitosamente",
-                "claim_number": claim.claim_number,
-                "policy_number": policy.policy_number,
-                "acknowledgement_sent": email_sent
-            }),
-            status_code=200,
-            media_type="application/json"
-        )
+        # Comparar con la firma recibida
+        return hmac.compare_digest(f"sha256={expected_signature}", signature)
         
     except Exception as e:
-        print(f"❌ Error procesando webhook de email: {str(e)}")
-        # Aún devolvemos 200 para evitar que SendGrid reintente
-        return Response(
-            content=json.dumps({"status": "error", "message": str(e)}),
-            status_code=200,
-            media_type="application/json"
-        )
+        print(f"❌ Error verificando firma: {e}")
+        return False
 
-async def extract_policy_number_from_email(subject: str, body: str) -> Optional[str]:
-    """
-    Extrae el número de póliza del email usando IA y regex.
-    
-    Args:
-        subject: Asunto del email
-        body: Cuerpo del email
-        
-        Returns:
-            str: Número de póliza extraído, None si no se encuentra
-    """
-    # Primero intentar con regex para patrones comunes
-    combined_text = f"{subject} {body}"
-    
-    # Patrones comunes de números de póliza
-    patterns = [
-        r'POL[IÍ]ZA[:\s]*([A-Z0-9\-]+)',  # PÓLIZA: ABC123
-        r'POLICY[:\s]*([A-Z0-9\-]+)',     # POLICY: ABC123
-        r'P[OÓ]L[:\s]*([A-Z0-9\-]+)',    # PÓL: ABC123
-        r'([A-Z]{2,3}\d{3,8})',          # ABC123456
-        r'(\d{3,8}[A-Z]{2,3})',          # 123456ABC
-    ]
-    
-    for pattern in patterns:
-        match = re.search(pattern, combined_text, re.IGNORECASE)
-        if match:
-            policy_number = match.group(1) if len(match.groups()) > 0 else match.group(0)
-            print(f"🔍 Número de póliza encontrado con regex: {policy_number}")
-            return policy_number.upper()
-    
-    # Si no se encuentra con regex, usar IA
-    try:
-        prompt = f"""
-        Analiza el siguiente email y extrae el número de póliza de seguro.
-        
-        Asunto: {subject}
-        Contenido: {body}
-        
-        Busca patrones como:
-        - Números de póliza (ej: ABC123, 123456, POL-2024-001)
-        - Referencias a pólizas de seguro
-        - Cualquier identificador que parezca ser un número de póliza
-        
-        Responde SOLO con el número de póliza encontrado, sin texto adicional.
-        Si no encuentras un número de póliza, responde con "NO_ENCONTRADO".
-        """
-        
-        response = llm_service.get_response(prompt)
-        
-        if response and response.strip() != "NO_ENCONTRADO":
-            policy_number = response.strip()
-            print(f"🔍 Número de póliza encontrado con IA: {policy_number}")
-            return policy_number.upper()
-        
-    except Exception as e:
-        print(f"⚠️ Error usando IA para extraer número de póliza: {e}")
-    
-    return None
-
-async def generate_claim_summary(subject: str, body: str) -> Optional[str]:
-    """
-    Genera un resumen del siniestro usando IA.
-    
-    Args:
-        subject: Asunto del email
-        body: Cuerpo del email
-        
-        Returns:
-            str: Resumen generado por IA, None si hay error
-    """
-    try:
-        prompt = f"""
-        Analiza el siguiente email de notificación de siniestro y genera un resumen conciso.
-        
-        Asunto: {subject}
-        Contenido: {body}
-        
-        El resumen debe incluir:
-        - Tipo de incidente
-        - Fecha del incidente (si se menciona)
-        - Daños o pérdidas descritas
-        - Monto estimado (si se menciona)
-        - Información clave del cliente
-        
-        Responde con un resumen claro y estructurado.
-        """
-        
-        summary = llm_service.get_response(prompt)
-        return summary if summary else None
-        
-    except Exception as e:
-        print(f"⚠️ Error generando resumen de IA: {e}")
-        return None
-
-async def log_error_communication(
-    db: Session,
-    sender: str,
-    subject: str,
-    body: str,
-    error_message: str
+@router.post("/webhook/email")
+async def email_webhook(
+    request: Request,
+    from_email: str = Form(...),
+    to_email: str = Form(...),
+    subject: str = Form(default="Sin asunto"),
+    text: Optional[str] = Form(default=None),
+    html: Optional[str] = Form(default=None),
+    attachments: Optional[List[UploadFile]] = File(default=[]),
+    resend_signature: Optional[str] = Header(None, alias="resend-signature")
 ):
     """
-    Registra una comunicación de error cuando no se puede procesar un email.
-    
-    Args:
-        db: Sesión de base de datos
-        sender: Email del remitente
-        subject: Asunto del email
-        body: Cuerpo del email
-        error_message: Mensaje de error
+    Webhook para recibir emails de Resend en formato multipart/form-data.
+    Procesa el email y extrae toda la información relevante.
     """
     try:
-        # Crear una comunicación sin claim_id para errores
-        communication = crud.log_communication(
-            db=db,
-            claim_id=None,  # Sin claim asociado
-            channel="EMAIL_INBOUND_ERROR",
-            content={
-                "subject": subject,
-                "body": body,
-                "error": error_message,
-                "sender": sender
-            },
-            direction="inbound",
-            sender=sender,
-            subject=subject
-        )
-        print(f"📝 Error registrado: {communication.id}")
+        print("\n" + "="*80)
+        print("📧 EMAIL RECIBIDO - " + datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
+        print("="*80)
+        
+        # Verificar firma de Resend
+        if resend_signature:
+            body = await request.body()
+            if not verify_resend_signature(body, resend_signature):
+                print("❌ Firma de Resend inválida - posible ataque")
+                raise HTTPException(status_code=401, detail="Invalid signature")
+            print("✅ Firma de Resend verificada")
+        else:
+            print("⚠️ No se recibió firma de Resend (prueba local)")
+        
+        # Imprimir información básica del email
+        print(f"\n📋 INFORMACIÓN BÁSICA:")
+        print(f"   De: {from_email}")
+        print(f"   Para: {to_email}")
+        print(f"   Asunto: {subject}")
+        print(f"   Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+        
+        # Imprimir contenido del email
+        print(f"\n📝 CONTENIDO DEL EMAIL:")
+        
+        # Texto plano
+        if text:
+            print(f"\n   📄 TEXTO PLANO:")
+            print(f"   {text}")
+        
+        # HTML
+        if html:
+            print(f"\n   🌐 HTML:")
+            print(f"   {html}")
+        
+        # Adjuntos
+        if attachments:
+            print(f"\n   📎 ADJUNTOS ({len(attachments)} archivos):")
+            for i, attachment in enumerate(attachments, 1):
+                print(f"\n   📎 Adjunto {i}:")
+                print(f"      Nombre: {attachment.filename}")
+                print(f"      Tipo: {attachment.content_type}")
+                
+                # Leer el contenido del archivo
+                content = await attachment.read()
+                print(f"      Tamaño: {len(content)} bytes")
+                
+                # Si es una imagen, mostrar información adicional
+                if attachment.content_type and attachment.content_type.startswith('image/'):
+                    print(f"      ✅ Es una imagen")
+                    print(f"      📊 Datos: {len(content)} bytes")
+                    print(f"      🔍 Primeros 50 bytes: {content[:50]}")
+        
+        # Imprimir headers para debugging
+        print(f"\n🔍 HEADERS DEL REQUEST:")
+        for header, value in request.headers.items():
+            if header.lower() in ['content-type', 'content-length', 'user-agent', 'x-forwarded-for', 'resend-signature']:
+                print(f"   {header}: {value}")
+        
+        # Intentar obtener datos adicionales del body raw para debugging
+        try:
+            body = await request.body()
+            print(f"\n🔍 DATOS RAW DEL REQUEST:")
+            print(f"   Tamaño del body: {len(body)} bytes")
+            print(f"   Content-Type: {request.headers.get('content-type', 'No disponible')}")
+            
+            # Mostrar los primeros bytes del body para debugging
+            if body:
+                print(f"   Primeros 200 bytes del body:")
+                print(f"   {body[:200]}")
+                
+        except Exception as body_error:
+            print(f"   ⚠️ Error leyendo body: {body_error}")
+        
+        print("\n" + "="*80)
+        print("✅ EMAIL PROCESADO - FIN")
+        print("="*80 + "\n")
+        
+        # Responder con éxito
+        return {
+            "status": "success",
+            "message": "Email recibido y procesado",
+            "timestamp": datetime.now().isoformat(),
+            "from": from_email,
+            "to": to_email,
+            "subject": subject
+        }
+        
     except Exception as e:
-        print(f"❌ Error registrando comunicación de error: {e}") 
+        print(f"\n❌ ERROR PROCESANDO WEBHOOK: {str(e)}")
+        print("="*80 + "\n")
+        
+        # Intentar obtener más información del error
+        try:
+            body = await request.body()
+            print(f"Body recibido: {len(body)} bytes")
+            print(f"Headers: {dict(request.headers)}")
+        except:
+            pass
+        
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error procesando webhook: {str(e)}"
+        )
+
+@router.get("/webhook/email")
+async def webhook_status():
+    """Endpoint para verificar que el webhook está funcionando."""
+    return {
+        "status": "ok",
+        "message": "Email webhook está funcionando",
+        "timestamp": datetime.now().isoformat()
+    } 
