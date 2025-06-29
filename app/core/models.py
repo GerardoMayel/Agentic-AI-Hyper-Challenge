@@ -1,139 +1,87 @@
 # Este archivo define los modelos de la base de datos usando SQLAlchemy.
 
-from sqlalchemy import (Column, Integer, String, DateTime, Float, Text,
-                        ForeignKey, Enum)
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, BigInteger, ForeignKey
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-import enum
+from datetime import datetime
 
-from app.core.database import Base
+Base = declarative_base()
 
-class StatusEnum(str, enum.Enum):
-    OPEN_NOTIFIED = "OPEN_NOTIFIED"
-    PENDING_CUSTOMER_DOCUMENTS = "PENDING_CUSTOMER_DOCUMENTS"
-    UNDER_AI_REVIEW = "UNDER_AI_REVIEW"
-    PENDING_ANALYST_REVIEW = "PENDING_ANALYST_REVIEW"
-    ADDITIONAL_INFO_REQUESTED = "ADDITIONAL_INFO_REQUESTED"
-    DECISION_APPROVED = "DECISION_APPROVED"
-    DECISION_REJECTED = "DECISION_REJECTED"
-    CLOSED_PAID = "CLOSED_PAID"
-    CLOSED_REJECTED = "CLOSED_REJECTED"
-    IN_LITIGATION = "IN_LITIGATION"
+class Siniestro(Base):
+    """Modelo básico para siniestros reportados."""
+    __tablename__ = 'siniestros'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    numero_siniestro = Column(String(100), unique=True, nullable=False, index=True)
+    gmail_message_id = Column(String(255), unique=True, nullable=False, index=True)
+    remitente_email = Column(String(255), nullable=False, index=True)
+    remitente_nombre = Column(String(255))
+    subject = Column(Text, nullable=False)
+    contenido_texto = Column(Text)
+    fecha_reporte = Column(DateTime, nullable=False, index=True)
+    created_at = Column(DateTime, default=func.now())
+    
+    # Relación 1 a muchos con documentos
+    documentos = relationship("Documento", back_populates="siniestro", cascade="all, delete-orphan")
 
-class User(Base):
-    """Modelo para analistas y administradores del sistema."""
-    __tablename__ = 'users'
+class Documento(Base):
+    """Modelo para documentos adjuntos a siniestros."""
+    __tablename__ = 'documentos'
     
-    id = Column(Integer, primary_key=True)
-    username = Column(String(255), unique=True, index=True, nullable=False)
-    hashed_password = Column(String(255), nullable=False)
-    role = Column(String(50), default="analyst")
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    id = Column(Integer, primary_key=True, index=True)
+    siniestro_id = Column(Integer, ForeignKey('siniestros.id', ondelete='CASCADE'), nullable=False, index=True)
+    nombre_archivo = Column(String(255), nullable=False)
+    tipo_mime = Column(String(100), nullable=False)
+    tamaño_bytes = Column(BigInteger, nullable=False)
+    url_storage = Column(String(500))
+    ruta_storage = Column(String(500))
+    created_at = Column(DateTime, default=func.now())
     
-    # Relaciones
-    claims = relationship("Claim", back_populates="analyst")
+    # Relación muchos a uno con siniestro
+    siniestro = relationship("Siniestro", back_populates="documentos")
 
-class Policy(Base):
-    """Modelo para las pólizas de seguro."""
-    __tablename__ = 'policies'
+# Función para generar número único de siniestro
+def generar_numero_siniestro():
+    """Genera un número único de siniestro con formato CLAIM-YYYYMMDD-XXXX."""
+    from datetime import datetime
+    import random
     
-    id = Column(Integer, primary_key=True)
-    policy_number = Column(String(255), unique=True, index=True, nullable=False)
-    customer_email = Column(String(255), index=True, nullable=False)
-    customer_name = Column(String(255))
-    status = Column(String(50), default="active")
-    start_date = Column(DateTime(timezone=True))
-    end_date = Column(DateTime(timezone=True))
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
-    # Relaciones
-    coverages = relationship("Coverage", back_populates="policy", cascade="all, delete-orphan")
-    claims = relationship("Claim", back_populates="policy", cascade="all, delete-orphan")
+    fecha = datetime.now().strftime("%Y%m%d")
+    numero_aleatorio = random.randint(1000, 9999)
+    return f"CLAIM-{fecha}-{numero_aleatorio}"
 
-class Coverage(Base):
-    """Modelo para las coberturas específicas de cada póliza."""
-    __tablename__ = 'coverages'
+# Función para extraer información del remitente
+def extraer_info_remitente(from_header):
+    """Extrae email y nombre del header 'From' de Gmail."""
+    if not from_header:
+        return None, None
     
-    id = Column(Integer, primary_key=True)
-    policy_id = Column(Integer, ForeignKey('policies.id'), nullable=False)
-    coverage_type = Column(String(100), nullable=False)  # e.g., 'BAGGAGE_DELAY', 'MEDICAL', etc.
-    limit_amount = Column(Float)
-    deductible = Column(Float)
-    description = Column(Text)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    
-    # Relaciones
-    policy = relationship("Policy", back_populates="coverages")
+    # Formato típico: "Nombre Apellido <email@dominio.com>"
+    if '<' in from_header and '>' in from_header:
+        nombre = from_header.split('<')[0].strip().strip('"')
+        email = from_header.split('<')[1].split('>')[0].strip()
+        return email, nombre if nombre else None
+    else:
+        # Solo email sin nombre
+        return from_header.strip(), None
 
-class Claim(Base):
-    """Modelo central para los siniestros (claims)."""
-    __tablename__ = 'claims'
+# Función para determinar si es nuevo siniestro
+def es_nuevo_siniestro(remitente_email, subject, contenido):
+    """Determina si un email corresponde a un nuevo siniestro."""
+    # TODO: Implementar lógica más sofisticada con AI
+    # Por ahora, lógica básica basada en palabras clave
     
-    id = Column(Integer, primary_key=True)
-    claim_number = Column(String(255), unique=True, index=True, nullable=False)
-    policy_id = Column(Integer, ForeignKey('policies.id'), nullable=False)
-    assigned_to_id = Column(Integer, ForeignKey('users.id'), nullable=True)
-    status = Column(Enum(StatusEnum), default=StatusEnum.OPEN_NOTIFIED, nullable=False)
-    summary_ai = Column(Text)  # Resumen generado por IA
-    incident_date = Column(DateTime(timezone=True))  # Fecha del incidente
-    incident_description = Column(Text)  # Descripción del incidente
-    estimated_amount = Column(Float)  # Monto estimado del siniestro
-    opened_at = Column(DateTime(timezone=True), server_default=func.now())
-    closed_at = Column(DateTime(timezone=True), nullable=True)
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    palabras_clave_nuevo = [
+        'nuevo siniestro', 'reportar siniestro', 'declarar siniestro',
+        'accidente', 'daño', 'pérdida', 'robo', 'incendio',
+        'first time', 'new claim', 'report claim'
+    ]
     
-    # Relaciones
-    policy = relationship("Policy", back_populates="claims")
-    analyst = relationship("User", back_populates="claims")
-    documents = relationship("Document", back_populates="claim", cascade="all, delete-orphan")
-    claim_forms = relationship("ClaimForm", back_populates="claim", cascade="all, delete-orphan")
-    communications = relationship("Communication", back_populates="claim", cascade="all, delete-orphan")
-
-class Document(Base):
-    """Modelo para los documentos adjuntos a los siniestros."""
-    __tablename__ = 'documents'
+    texto_completo = f"{subject} {contenido}".lower()
     
-    id = Column(Integer, primary_key=True)
-    claim_id = Column(Integer, ForeignKey('claims.id'), nullable=False)
-    file_name = Column(String(255), nullable=False)
-    storage_url = Column(Text, nullable=False)  # URL de Cloudflare R2
-    document_type = Column(String(100))  # e.g., 'RECEIPT', 'MEDICAL_REPORT', 'POLICE_REPORT'
-    file_size = Column(Integer)  # Tamaño del archivo en bytes
-    mime_type = Column(String(100))  # Tipo MIME del archivo
-    uploaded_at = Column(DateTime(timezone=True), server_default=func.now())
+    for palabra in palabras_clave_nuevo:
+        if palabra in texto_completo:
+            return True
     
-    # Relaciones
-    claim = relationship("Claim", back_populates="documents")
-
-class ClaimForm(Base):
-    """Modelo para los datos de los formularios (web o extraídos de PDF)."""
-    __tablename__ = 'claim_forms'
-    
-    id = Column(Integer, primary_key=True)
-    claim_id = Column(Integer, ForeignKey('claims.id'), nullable=False)
-    submission_type = Column(String(50), nullable=False)  # 'WEB' o 'PDF_EXTRACTED'
-    form_data = Column(JSONB, nullable=False)  # Todos los campos del formulario van aquí
-    submitted_at = Column(DateTime(timezone=True), server_default=func.now())
-    
-    # Relaciones
-    claim = relationship("Claim", back_populates="claim_forms")
-
-class Communication(Base):
-    """Modelo para registrar todas las comunicaciones relacionadas con un siniestro."""
-    __tablename__ = 'communications'
-    
-    id = Column(Integer, primary_key=True)
-    claim_id = Column(Integer, ForeignKey('claims.id'), nullable=False)
-    channel = Column(String(50), nullable=False)  # e.g., 'EMAIL_INBOUND', 'EMAIL_OUTBOUND', 'CHAT', 'PHONE'
-    content = Column(JSONB, nullable=False)  # Cuerpo del email, transcripción del chat, etc.
-    direction = Column(String(20), default="inbound")  # 'inbound' o 'outbound'
-    sender = Column(String(255))  # Email o identificador del remitente
-    recipient = Column(String(255))  # Email o identificador del destinatario
-    subject = Column(String(500))  # Asunto (para emails)
-    timestamp = Column(DateTime(timezone=True), server_default=func.now())
-    
-    # Relaciones
-    claim = relationship("Claim", back_populates="communications") 
+    return False 

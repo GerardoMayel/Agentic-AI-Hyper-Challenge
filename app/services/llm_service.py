@@ -1,179 +1,169 @@
 import os
+import base64
+import json
 from typing import List, Dict, Any, Optional
-import google.generativeai as genai
+from google import genai
 
 class LLMService:
-    """Servicio para interactuar con la API de Google Gemini."""
+    """Servicio para interactuar con Google Gemini LLM."""
     
     def __init__(self):
         self.api_key = os.getenv("GEMINI_API_KEY")
         if self.api_key:
-            genai.configure(api_key=self.api_key)
-            self.model = genai.GenerativeModel('gemini-pro')
+            self.client = genai.Client(api_key=self.api_key)
         else:
-            self.model = None
-            print("GEMINI_API_KEY no está configurada.")
+            self.client = None
+            print("⚠️  GEMINI_API_KEY no está configurada")
     
-    def get_response(
-        self,
-        prompt: str,
-        conversation_history: Optional[List[Dict[str, str]]] = None
-    ) -> str:
+    def analyze_image(self, image_data: bytes, prompt: str = "Analyze this image and extract all text content. Return the result as a JSON object with the following structure: {'text_content': 'extracted text', 'description': 'brief description of the image', 'confidence': 'high/medium/low'}") -> Optional[Dict[str, Any]]:
         """
-        Obtiene una respuesta del modelo Gemini.
+        Analiza una imagen usando Gemini Vision.
         
         Args:
-            prompt: El prompt o mensaje del usuario
-            conversation_history: Historial de conversación previo
+            image_data: Datos de la imagen en bytes
+            prompt: Prompt para el análisis
             
         Returns:
-            str: La respuesta generada por el modelo
+            Diccionario con el resultado del análisis o None si hay error
         """
-        if not self.model:
-            return "Lo siento, el servicio de IA no está disponible en este momento."
+        if not self.client:
+            print("❌ Cliente de Gemini no disponible")
+            return None
         
         try:
-            if conversation_history:
-                # Construir el contexto completo con el historial
-                full_prompt = self._build_context_prompt(prompt, conversation_history)
-                response = self.model.generate_content(full_prompt)
-            else:
-                response = self.model.generate_content(prompt)
+            # Codificar la imagen en base64
+            image_base64 = base64.b64encode(image_data).decode('utf-8')
             
-            return response.text
+            # Crear el contenido con imagen y texto
+            content = [
+                {
+                    "role": "user",
+                    "parts": [
+                        {"text": prompt},
+                        {
+                            "inline_data": {
+                                "mime_type": "image/jpeg",
+                                "data": image_base64
+                            }
+                        }
+                    ]
+                }
+            ]
             
+            # Generar respuesta
+            response = self.client.models.generate_content(
+                model="gemini-2.0-flash-lite",
+                contents=content
+            )
+            
+            # Intentar parsear como JSON
+            try:
+                result = json.loads(response.text)
+                return result
+            except json.JSONDecodeError:
+                # Si no es JSON válido, devolver como texto
+                return {
+                    "text_content": response.text,
+                    "description": "Análisis de imagen completado",
+                    "confidence": "medium"
+                }
+                
         except Exception as e:
-            print(f"Error llamando a Gemini API: {str(e)}")
-            return "Lo siento, hubo un error procesando tu solicitud."
+            print(f"❌ Error analizando imagen: {str(e)}")
+            return None
     
-    def get_gemini_response(self, conversation_history: List[Dict[str, str]]) -> str:
+    def extract_text_from_image(self, image_data: bytes) -> Optional[str]:
         """
-        Obtiene una respuesta del modelo Gemini basado en un historial de conversación.
+        Extrae texto de una imagen.
         
         Args:
-            conversation_history: Una lista de diccionarios con roles y contenido.
-                                 Formato: [{"role": "user", "content": "..."}, ...]
-        
-        Returns:
-            str: La respuesta en texto generada por el modelo.
-        """
-        if not self.model:
-            print("Gemini API no está configurada. Respuesta simulada.")
-            return "Esta es una respuesta simulada del LLM."
-        
-        try:
-            # Construir el prompt con el historial de conversación
-            prompt = self._format_conversation_history(conversation_history)
-            response = self.model.generate_content(prompt)
-            return response.text
+            image_data: Datos de la imagen en bytes
             
-        except Exception as e:
-            print(f"Error llamando a la API de Gemini: {str(e)}")
-            return "Lo siento, hubo un error procesando tu solicitud."
-    
-    def _build_context_prompt(
-        self,
-        current_prompt: str,
-        conversation_history: List[Dict[str, str]]
-    ) -> str:
+        Returns:
+            Texto extraído o None si hay error
         """
-        Construye un prompt con contexto basado en el historial de conversación.
+        result = self.analyze_image(
+            image_data, 
+            "Extract all text content from this image. Return only the extracted text, nothing else."
+        )
+        
+        if result and isinstance(result, dict):
+            return result.get('text_content', '')
+        
+        return result if isinstance(result, str) else None
+    
+    def analyze_email_content(self, email_body: str, attachments: list) -> Dict[str, Any]:
+        """
+        Analiza el contenido de un email y sus adjuntos.
         
         Args:
-            current_prompt: El prompt actual
-            conversation_history: Historial de conversación
+            email_body: Cuerpo del email
+            attachments: Lista de adjuntos
             
         Returns:
-            str: Prompt completo con contexto
+            Diccionario con el análisis completo
         """
-        context = "Contexto de la conversación anterior:\n"
+        analysis = {
+            "email_text": email_body,
+            "attachments_analysis": [],
+            "summary": ""
+        }
         
-        for message in conversation_history[-5:]:  # Últimos 5 mensajes para contexto
-            role = message.get("role", "unknown")
-            content = message.get("content", "")
-            context += f"{role.upper()}: {content}\n"
+        # Analizar adjuntos de imagen
+        for attachment in attachments:
+            if attachment['mime_type'].startswith('image/'):
+                print(f"🔍 Analizando imagen: {attachment['filename']}")
+                
+                image_analysis = self.analyze_image(
+                    attachment['data'],
+                    "Analyze this image and extract all text content. Return as JSON: {'text_content': 'extracted text', 'description': 'brief description', 'confidence': 'high/medium/low'}"
+                )
+                
+                if image_analysis:
+                    analysis["attachments_analysis"].append({
+                        "filename": attachment['filename'],
+                        "mime_type": attachment['mime_type'],
+                        "analysis": image_analysis
+                    })
         
-        context += f"\nMensaje actual: {current_prompt}\n\nPor favor, responde al mensaje actual considerando el contexto proporcionado."
+        # Generar resumen del email
+        if self.client:
+            try:
+                summary_prompt = f"""
+                Analyze this email content and provide a brief summary:
+                
+                Email Body: {email_body}
+                
+                Attachments: {len(analysis['attachments_analysis'])} images analyzed
+                
+                Provide a concise summary in JSON format:
+                {{"summary": "brief summary", "key_points": ["point1", "point2"], "action_required": true/false}}
+                """
+                
+                response = self.client.models.generate_content(
+                    model="gemini-2.0-flash-lite",
+                    contents=summary_prompt
+                )
+                
+                try:
+                    summary_result = json.loads(response.text)
+                    analysis["summary"] = summary_result
+                except json.JSONDecodeError:
+                    analysis["summary"] = {
+                        "summary": response.text,
+                        "key_points": [],
+                        "action_required": False
+                    }
+                    
+            except Exception as e:
+                print(f"❌ Error generando resumen: {str(e)}")
+                analysis["summary"] = {
+                    "summary": "Error generando resumen",
+                    "key_points": [],
+                    "action_required": False
+                }
         
-        return context
-    
-    def _format_conversation_history(self, history: List[Dict[str, str]]) -> str:
-        """
-        Formatea el historial de conversación para enviarlo al modelo.
-        
-        Args:
-            history: Lista de mensajes con roles y contenido
-            
-        Returns:
-            str: Historial formateado
-        """
-        formatted = "Historial de la conversación:\n\n"
-        
-        for message in history:
-            role = message.get("role", "unknown")
-            content = message.get("content", "")
-            formatted += f"{role.upper()}: {content}\n\n"
-        
-        formatted += "Por favor, continúa la conversación de manera natural y útil."
-        
-        return formatted
-    
-    def analyze_email_content(self, email_content: str) -> Dict[str, Any]:
-        """
-        Analiza el contenido de un email para extraer información relevante.
-        
-        Args:
-            email_content: Contenido del email
-            
-        Returns:
-            Dict: Información analizada del email
-        """
-        if not self.model:
-            return {
-                "sentiment": "neutral",
-                "urgency": "low",
-                "category": "general",
-                "summary": "No se pudo analizar el contenido."
-            }
-        
-        try:
-            analysis_prompt = f"""
-            Analiza el siguiente email y proporciona:
-            1. Sentimiento (positive, negative, neutral)
-            2. Urgencia (high, medium, low)
-            3. Categoría (support, sales, general, complaint, inquiry)
-            4. Resumen breve del contenido
-            
-            Email:
-            {email_content}
-            
-            Responde en formato JSON:
-            {{
-                "sentiment": "...",
-                "urgency": "...",
-                "category": "...",
-                "summary": "..."
-            }}
-            """
-            
-            response = self.model.generate_content(analysis_prompt)
-            # Aquí deberías parsear la respuesta JSON
-            # Por simplicidad, retornamos un análisis básico
-            return {
-                "sentiment": "neutral",
-                "urgency": "medium",
-                "category": "general",
-                "summary": response.text[:200] + "..." if len(response.text) > 200 else response.text
-            }
-            
-        except Exception as e:
-            print(f"Error analizando email: {str(e)}")
-            return {
-                "sentiment": "neutral",
-                "urgency": "low",
-                "category": "general",
-                "summary": "Error en el análisis."
-            }
+        return analysis
 
 # Instancia global del servicio
 llm_service = LLMService() 
