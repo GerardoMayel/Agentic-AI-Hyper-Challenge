@@ -1,61 +1,138 @@
-import reflex as rx
-from app.components.navbar import navbar
-from app.state.auth_state import AuthState
+"""
+Login Page - Modern design with Zurich Insurance palette
+"""
 
-@rx.page(route="/login")
-def login_page() -> rx.Component:
-    """Página de inicio de sesión."""
-    return rx.vstack(
-        navbar(),
-        rx.vstack(
-            rx.heading(
-                "Iniciar Sesión",
-                size="xl",
-                color="blue.600",
-                margin_bottom="6"
-            ),
+import reflex as rx
+
+def login_page():
+    """Login page with Zurich Insurance design."""
+    
+    return rx.box(
+        # Background with gradient
+        rx.box(
             rx.vstack(
-                rx.input(
-                    placeholder="Email",
-                    id="email",
-                    type_="email",
-                    required=True,
-                    width="100%"
+                # Logo and Title
+                rx.vstack(
+                    rx.heading(
+                        "Zurich Insurance",
+                        class_name="text-4xl md:text-5xl font-bold text-white text-center mb-2 tracking-tight"
+                    ),
+                    rx.text(
+                        "Claims Management System",
+                        class_name="text-xl text-blue-100 text-center font-medium"
+                    ),
+                    rx.divider(class_name="w-24 mx-auto border-blue-300 my-6"),
+                    class_name="mb-12"
                 ),
-                rx.input(
-                    placeholder="Contraseña",
-                    id="password",
-                    type_="password",
-                    required=True,
-                    width="100%"
+                
+                # Login Form
+                rx.box(
+                    rx.vstack(
+                        rx.heading(
+                            "Welcome Back",
+                            class_name="text-3xl font-bold text-slate-800 text-center mb-2"
+                        ),
+                        rx.text(
+                            "Sign in to access your dashboard",
+                            class_name="text-slate-600 text-center mb-8"
+                        ),
+                        
+                        # Email Field
+                        rx.vstack(
+                            rx.text("Email Address", class_name="text-sm font-semibold text-slate-700 mb-2"),
+                            rx.input(
+                                placeholder="Enter your email address",
+                                type_="email",
+                                class_name="w-full p-4 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm",
+                                required=True
+                            ),
+                            class_name="w-full"
+                        ),
+                        
+                        # Password Field
+                        rx.vstack(
+                            rx.text("Password", class_name="text-sm font-semibold text-slate-700 mb-2"),
+                            rx.input(
+                                placeholder="Enter your password",
+                                type_="password",
+                                class_name="w-full p-4 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm",
+                                required=True
+                            ),
+                            class_name="w-full mt-6"
+                        ),
+                        
+                        # Remember Me and Forgot Password
+                        rx.hstack(
+                            rx.checkbox(
+                                "Remember me",
+                                class_name="text-slate-700 font-medium"
+                            ),
+                            rx.link(
+                                "Forgot password?",
+                                class_name="text-blue-600 hover:text-blue-700 font-medium transition-colors",
+                                href="#"
+                            ),
+                            class_name="w-full justify-between mt-6"
+                        ),
+                        
+                        # Login Button
+                        rx.button(
+                            "Sign In",
+                            type_="submit",
+                            class_name="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 px-8 rounded-xl font-bold text-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 transform hover:scale-105 shadow-xl mt-8"
+                        ),
+                        
+                        # Divider
+                        rx.hstack(
+                            rx.divider(class_name="flex-1"),
+                            rx.text("or", class_name="px-4 text-slate-500 font-medium"),
+                            rx.divider(class_name="flex-1"),
+                            class_name="w-full my-8"
+                        ),
+                        
+                        # Demo Login Info
+                        rx.box(
+                            rx.vstack(
+                                rx.text(
+                                    "Demo Access",
+                                    class_name="text-lg font-bold text-slate-800 mb-2"
+                                ),
+                                rx.text(
+                                    "Email: admin@zurich.com",
+                                    class_name="text-slate-600 text-sm"
+                                ),
+                                rx.text(
+                                    "Password: demo123",
+                                    class_name="text-slate-600 text-sm"
+                                ),
+                                class_name="text-center"
+                            ),
+                            class_name="p-4 bg-blue-50 rounded-xl border border-blue-200"
+                        ),
+                        
+                        class_name="w-full max-w-md"
+                    ),
+                    class_name="p-8 bg-white rounded-2xl shadow-2xl border border-slate-100"
                 ),
-                rx.button(
-                    "Iniciar Sesión",
-                    width="100%",
-                    color_scheme="blue",
-                    on_click=AuthState.login
+                
+                # Footer
+                rx.vstack(
+                    rx.text(
+                        "Don't have an account?",
+                        class_name="text-slate-600 text-center"
+                    ),
+                    rx.link(
+                        "Contact your administrator",
+                        class_name="text-blue-600 hover:text-blue-700 font-medium transition-colors",
+                        href="#"
+                    ),
+                    class_name="mt-8"
                 ),
-                rx.link(
-                    "¿No tienes cuenta? Regístrate",
-                    href="/register",
-                    color="blue.600",
-                    text_decoration="underline"
-                ),
-                width="100%",
-                max_width="400px",
-                spacing="4",
-                padding="6",
-                border="1px solid",
-                border_color="gray.200",
-                border_radius="lg",
-                background="white"
+                
+                class_name="max-w-md mx-auto px-4"
             ),
-            width="100%",
-            max_width="600px",
-            padding="8",
-            spacing="6"
+            class_name="w-full min-h-screen py-12 bg-gradient-to-br from-slate-900 via-blue-900 to-blue-800 flex items-center justify-center"
         ),
-        width="100%",
-        min_height="100vh",
-        background="gray.50"
+        
+        class_name="min-h-screen"
     ) 

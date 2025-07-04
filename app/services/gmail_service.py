@@ -13,6 +13,7 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+import sys
 
 class GmailService:
     """Servicio para leer emails de Gmail usando la API de Gmail."""
@@ -26,24 +27,22 @@ class GmailService:
         self._authenticate()
     
     def _authenticate(self):
-        """Autentica con la API de Gmail."""
-        # El archivo token.json almacena los tokens de acceso y actualización del usuario
-        # y se crea automáticamente cuando el flujo de autorización se completa por primera vez
-        if os.path.exists('token.json'):
+        """Autentica usando el archivo token.json y verifica refresh_token."""
+        try:
             self.creds = Credentials.from_authorized_user_file('token.json', self.SCOPES)
-        
-        # Si no hay credenciales válidas disponibles, deja que el usuario se autentique
-        if not self.creds or not self.creds.valid:
-            if self.creds and self.creds.expired and self.creds.refresh_token:
-                self.creds.refresh(Request())
-            else:
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    'client_secret_60100775754-vrb6oq8eopesebg3iala0d9ootr6cbih.apps.googleusercontent.com.json', self.SCOPES)
-                self.creds = flow.run_local_server(port=8080)
-            
-            # Guarda las credenciales para la próxima ejecución
-            with open('token.json', 'w') as token:
-                token.write(self.creds.to_json())
+            # Verificar refresh_token
+            if not hasattr(self.creds, 'refresh_token') or not self.creds.refresh_token:
+                print("\n❌ ERROR: El archivo token.json no contiene refresh_token.")
+                print("\nSOLUCIÓN:")
+                print("1. Ve a https://myaccount.google.com/permissions y revoca el acceso de la app.")
+                print("2. Borra el archivo token.json.")
+                print("3. Ejecuta el script gmail_email_test.py --regenerate-token en modo incógnito.")
+                print("4. Autoriza y asegúrate de que el nuevo token.json tenga refresh_token.")
+                print("\nLa app se detendrá hasta que el token sea válido.\n")
+                sys.exit(1)
+        except Exception as e:
+            print(f"\n❌ ERROR autenticando con Gmail API: {e}\n")
+            sys.exit(1)
         
         try:
             # Llama a la API de Gmail

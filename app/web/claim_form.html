@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insurance Claim Form - Zurich Insurance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'zurich-blue': '#1e40af',
+                        'zurich-slate': '#475569'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+    <!-- Header -->
+    <div class="w-full py-16 bg-gradient-to-br from-slate-900 via-blue-900 to-blue-800 shadow-2xl relative overflow-hidden">
+        <div class="max-w-4xl mx-auto px-4 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">Insurance Claim Form</h1>
+            <p class="text-xl text-blue-100 font-medium">Please complete all sections to submit your claim</p>
+            <div class="w-24 mx-auto border-blue-300 my-4"></div>
+        </div>
+    </div>
+
+    <!-- Form Container -->
+    <div class="w-full max-w-7xl mx-auto px-4 py-12">
+        <form id="claimForm" class="space-y-8 max-w-5xl mx-auto">
+            
+            <!-- Step 1: Choose the Type of Claim -->
+            <div class="p-8 bg-white rounded-2xl shadow-xl border border-slate-100">
+                <h2 class="text-2xl font-bold text-slate-800 mb-6">Step 1: Choose the Type of Claim</h2>
+                <div class="space-y-4">
+                    <div class="flex items-start gap-3">
+                        <input type="radio" name="claimType" value="trip_cancellation" id="trip_cancellation" class="mt-1" required>
+                        <label for="trip_cancellation" class="text-slate-700 font-medium">Trip Cancellation</label>
+                        <span class="text-slate-600 text-sm">Cancellation of trip before departure</span>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <input type="radio" name="claimType" value="trip_delay" id="trip_delay" class="mt-1">
+                        <label for="trip_delay" class="text-slate-700 font-medium">Trip Delay</label>
+                        <span class="text-slate-600 text-sm">Delay in trip departure or arrival</span>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <input type="radio" name="claimType" value="trip_interruption" id="trip_interruption" class="mt-1">
+                        <label for="trip_interruption" class="text-slate-700 font-medium">Trip Interruption</label>
+                        <span class="text-slate-600 text-sm">Interruption during the trip</span>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <input type="radio" name="claimType" value="baggage_delay" id="baggage_delay" class="mt-1">
+                        <label for="baggage_delay" class="text-slate-700 font-medium">Baggage Delay</label>
+                        <span class="text-slate-600 text-sm">Delay or loss of baggage</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Claimant Information -->
+            <div class="p-8 bg-white rounded-2xl shadow-xl border border-slate-100">
+                <h2 class="text-2xl font-bold text-slate-800 mb-6">Step 2: Claimant Information (About Me)</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Name of person completing form *</label>
+                        <input type="text" name="claimantName" placeholder="Enter your full name" 
+                               class="w-full p-4 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Email Address *</label>
+                        <input type="email" name="emailAddress" placeholder="Enter your email address" 
+                               class="w-full p-4 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm" required>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Full names of all persons claiming</label>
+                    <textarea name="allClaimantsNames" rows="3" placeholder="Enter names of all claimants (if different from above)"
+                              class="w-full p-4 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm resize-none"></textarea>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Mailing Address</label>
+                    <textarea name="mailingAddress" rows="3" placeholder="Enter your complete mailing address"
+                              class="w-full p-4 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm resize-none"></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">City</label>
+                        <input type="text" name="city" placeholder="Enter city" 
+                               class="w-full p-4 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">State/Province</label>
+                        <input type="text" name="state" placeholder="Enter state/province" 
+                               class="w-full p-4 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Postal Code</label>
+                        <input type="text" name="postalCode" placeholder="Enter postal code" 
+                               class="w-full p-4 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Mobile Phone Number</label>
+                        <input type="tel" name="mobilePhone" placeholder="Enter mobile phone number" 
+                               class="w-full p-4 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Other Phone Number</label>
+                        <input type="tel" name="otherPhone" placeholder="Enter other phone number (optional)" 
+                               class="w-full p-4 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Policy/Confirmation Number</label>
+                        <input type="text" name="policyNumber" placeholder="Enter policy or confirmation number" 
+                               class="w-full p-4 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Travel Agency/Company</label>
+                        <input type="text" name="travelAgency" placeholder="Name of agency/company you purchased from" 
+                               class="w-full p-4 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Date initial deposit paid for trip</label>
+                    <input type="date" name="initialDepositDate" 
+                           class="w-full p-4 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm cursor-pointer">
+                </div>
+            </div>
+
+            <!-- Step 3: Incident Details -->
+            <div class="p-8 bg-white rounded-2xl shadow-xl border border-slate-100">
+                <h2 class="text-2xl font-bold text-slate-800 mb-6">Step 3: Incident Details (About What Happened)</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Date of Loss *</label>
+                        <input type="date" name="lossDate" 
+                               class="w-full p-4 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm cursor-pointer" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Total Amount Requested (USD) *</label>
+                        <input type="number" name="totalAmount" step="0.01" min="0" placeholder="0.00" 
+                               class="w-full p-4 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm" required>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Detailed description of the incident *</label>
+                    <textarea name="incidentDescription" rows="6" placeholder="Please describe the incident in detail, including what happened, when, where, and how it affected your trip..."
+                              class="w-full p-4 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm resize-none" required minlength="100"></textarea>
+                </div>
+            </div>
+
+            <!-- Step 4: Breakdown of Expenses -->
+            <div class="p-8 bg-white rounded-2xl shadow-xl border border-slate-100">
+                <h2 class="text-2xl font-bold text-slate-800 mb-6">Step 4: Breakdown of Expenses</h2>
+                <p class="text-slate-600 mb-6">Please list all expenses related to this claim. Click 'Add Another Expense' to add more rows.</p>
+                
+                <div id="expensesContainer">
+                    <!-- Initial expense row -->
+                    <div class="expense-row p-6 bg-slate-50 rounded-xl border border-slate-200 mb-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Description of Expense</label>
+                                <input type="text" name="expenseDescription[]" placeholder="e.g., Hotel cancellation fee" 
+                                       class="w-full p-4 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Date</label>
+                                <input type="date" name="expenseDate[]" 
+                                       class="w-full p-4 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm cursor-pointer">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Amount (USD)</label>
+                                <input type="number" name="expenseAmount[]" step="0.01" min="0" placeholder="0.00" 
+                                       class="w-full p-4 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="button" id="addExpenseBtn" 
+                        class="bg-blue-100 text-blue-700 px-6 py-3 rounded-xl font-semibold hover:bg-blue-200 transition-all duration-300 border-2 border-blue-200 hover:border-blue-300">
+                    Add Another Expense
+                </button>
+            </div>
+
+            <!-- Step 5: Document Upload -->
+            <div class="p-8 bg-white rounded-2xl shadow-xl border border-slate-100">
+                <h2 class="text-2xl font-bold text-slate-800 mb-6">Step 5: Document Upload</h2>
+                
+                <div class="text-center">
+                    <div class="p-12 border-2 border-dashed border-slate-300 rounded-2xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-300 cursor-pointer" id="dropZone">
+                        <div class="text-6xl mb-4">📎</div>
+                        <div class="text-slate-700 font-semibold text-lg mb-2">Upload supporting documents</div>
+                        <div class="text-slate-500 text-sm mb-2">PDF, JPG, PNG, DOC, DOCX up to 10MB each</div>
+                        <div class="text-slate-400 text-xs">Drag and drop files here or click to browse</div>
+                    </div>
+                    <input type="file" id="fileInput" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" class="mt-6 hidden">
+                </div>
+            </div>
+
+            <!-- Step 6: Authorization & Signature -->
+            <div class="p-8 bg-white rounded-2xl shadow-xl border border-slate-100">
+                <h2 class="text-2xl font-bold text-slate-800 mb-6">Step 6: Authorization & Signature</h2>
+                
+                <div class="p-6 bg-slate-50 rounded-xl border border-slate-200 mb-6">
+                    <label class="flex items-start gap-3">
+                        <input type="checkbox" name="declaration" class="mt-1" required>
+                        <span class="text-slate-700 font-medium leading-relaxed">
+                            I DECLARE THE ABOVE INFORMATION IS TRUE, COMPLETE AND CORRECT TO THE BEST OF MY KNOWLEDGE AND BELIEF. I UNDERSTAND THAT ANY FALSE STATEMENTS MAY RESULT IN DENIAL OF THIS CLAIM OR PROSECUTION FOR FRAUD.
+                        </span>
+                    </label>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Signature (Type your full name) *</label>
+                        <input type="text" name="signature" placeholder="Type your full name as signature" 
+                               class="w-full p-4 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Signature Date *</label>
+                        <input type="date" name="signatureDate" 
+                               class="w-full p-4 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm cursor-pointer" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" 
+                    class="w-full bg-gradient-to-r from-slate-700 to-blue-700 text-white py-6 px-8 rounded-2xl font-bold text-xl hover:from-slate-800 hover:to-blue-800 transition-all duration-300 transform hover:scale-105 shadow-2xl">
+                Submit Claim
+            </button>
+        </form>
+    </div>
+
+    <script>
+        // Set max date to today for all date inputs
+        const today = new Date().toISOString().split('T')[0];
+        document.querySelectorAll('input[type="date"]').forEach(input => {
+            input.max = today;
+        });
+
+        // Add expense functionality
+        let expenseCount = 1;
+        document.getElementById('addExpenseBtn').addEventListener('click', function() {
+            expenseCount++;
+            const container = document.getElementById('expensesContainer');
+            const newRow = document.createElement('div');
+            newRow.className = 'expense-row p-6 bg-slate-50 rounded-xl border border-slate-200 mb-4';
+            newRow.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Description of Expense</label>
+                        <input type="text" name="expenseDescription[]" placeholder="e.g., Hotel cancellation fee" 
+                               class="w-full p-4 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Date</label>
+                        <input type="date" name="expenseDate[]" max="${today}"
+                               class="w-full p-4 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm cursor-pointer">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Amount (USD)</label>
+                        <input type="number" name="expenseAmount[]" step="0.01" min="0" placeholder="0.00" 
+                               class="w-full p-4 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm">
+                    </div>
+                </div>
+                <button type="button" class="remove-expense mt-4 bg-red-100 text-red-700 px-4 py-2 rounded-lg font-medium hover:bg-red-200 transition-all duration-300">
+                    Remove Expense
+                </button>
+            `;
+            container.appendChild(newRow);
+        });
+
+        // Remove expense functionality
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-expense')) {
+                e.target.closest('.expense-row').remove();
+            }
+        });
+
+        // File upload functionality
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-blue-500', 'bg-blue-50');
+        });
+
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+            const files = e.dataTransfer.files;
+            handleFiles(files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            Array.from(files).forEach(file => {
+                // Validate file type and size
+                const validTypes = ['.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx'];
+                const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+                
+                if (!validTypes.includes(fileExtension)) {
+                    alert(`Invalid file type: ${file.name}. Please upload PDF, JPG, PNG, DOC, or DOCX files only.`);
+                    return;
+                }
+                
+                if (file.size > 10 * 1024 * 1024) { // 10MB
+                    alert(`File too large: ${file.name}. Please upload files smaller than 10MB.`);
+                    return;
+                }
+                
+                // Here you would typically upload the file to your server
+                console.log('File selected:', file.name, file.size, file.type);
+            });
+        }
+
+        // Form validation and submission
+        document.getElementById('claimForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Basic validation
+            const requiredFields = document.querySelectorAll('[required]');
+            let isValid = true;
+            
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    field.classList.add('border-red-500');
+                    isValid = false;
+                } else {
+                    field.classList.remove('border-red-500');
+                }
+            });
+            
+            if (!isValid) {
+                alert('Please fill in all required fields marked with *.');
+                return;
+            }
+            
+            // Collect form data
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
+            
+            // Process expenses
+            const expenses = [];
+            const descriptions = formData.getAll('expenseDescription[]');
+            const dates = formData.getAll('expenseDate[]');
+            const amounts = formData.getAll('expenseAmount[]');
+            
+            for (let i = 0; i < descriptions.length; i++) {
+                if (descriptions[i] && dates[i] && amounts[i]) {
+                    expenses.push({
+                        description: descriptions[i],
+                        date: dates[i],
+                        amount: parseFloat(amounts[i])
+                    });
+                }
+            }
+            
+            data.expenses = expenses;
+            
+            // Here you would typically send the data to your server
+            console.log('Form data:', data);
+            alert('Claim submitted successfully! You will receive a confirmation email shortly.');
+        });
+
+        // Real-time validation
+        document.addEventListener('input', function(e) {
+            if (e.target.hasAttribute('required')) {
+                if (e.target.value.trim()) {
+                    e.target.classList.remove('border-red-500');
+                } else {
+                    e.target.classList.add('border-red-500');
+                }
+            }
+        });
+    </script>
+</body>
+</html> 
