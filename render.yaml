@@ -20,8 +20,10 @@ services:
         sync: false
       - key: GOOGLE_CLOUD_PROJECT_ID
         sync: false
-      - key: GOOGLE_CLOUD_BUCKET_NAME
+      - key: GOOGLE_CLOUD_STORAGE_BUCKET
         sync: false
+      - key: GOOGLE_CLOUD_STORAGE_FOLDER
+        value: documentos
       - key: GOOGLE_APPLICATION_CREDENTIALS_JSON
         sync: false
       - key: GMAIL_CREDENTIALS_JSON
@@ -32,6 +34,8 @@ services:
         generateValue: true
       - key: LOGLEVEL
         value: info
+      - key: FROM_EMAIL
+        value: gerardo_mayel_fernandez_alamilla@chiefdataaiofficer.com
 
 databases:
   - name: claims-db
