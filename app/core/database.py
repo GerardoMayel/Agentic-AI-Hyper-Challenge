@@ -5,31 +5,45 @@ from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 from sqlalchemy.sql import text
 
-# Cargar variables de entorno
+# Load environment variables
 load_dotenv()
 
-# Obtener la URL de la base de datos desde las variables de entorno
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./agentic_ai.db")
+# Get database URL from environment variables
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./claims_management.db")
 
-# Crear el motor de la base de datos
+# Handle Render PostgreSQL URL format
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+# Create database engine
 engine = create_engine(
     DATABASE_URL,
-    # Configuraciones adicionales para PostgreSQL
-    pool_pre_ping=True,  # Verificar conexiones antes de usarlas
-    pool_recycle=300,    # Reciclar conexiones cada 5 minutos
-    echo=False,          # Cambiar a True para ver las consultas SQL en desarrollo
+    # Additional configurations for PostgreSQL
+    pool_pre_ping=True,  # Verify connections before using them
+    pool_recycle=300,    # Recycle connections every 5 minutes
+    echo=False,          # Change to True to see SQL queries in development
 )
 
-# Crear la clase SessionLocal
+# Create SessionLocal class
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Crear la clase Base para los modelos
+# Create Base class for models
 Base = declarative_base()
 
 def get_db():
     """
-    Función que proporciona una sesión de base de datos.
-    Usa yield para asegurar que la sesión se cierre correctamente.
+    Function that provides a database session.
+    Uses yield to ensure the session is properly closed.
+    """
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+def get_db_session():
+    """
+    Context manager for database sessions.
     """
     db = SessionLocal()
     try:
@@ -39,19 +53,19 @@ def get_db():
 
 def create_tables():
     """
-    Crea todas las tablas definidas en los modelos.
-    Útil para desarrollo y testing.
+    Creates all tables defined in the models.
+    Useful for development and testing.
     """
     Base.metadata.create_all(bind=engine)
 
 def drop_tables():
     """
-    Elimina todas las tablas.
-    ¡CUIDADO! Solo usar en desarrollo/testing.
+    Drops all tables.
+    WARNING! Only use in development/testing.
     """
     Base.metadata.drop_all(bind=engine)
 
-# Función para verificar la conexión a la base de datos
+# Function to test database connection
 def test_connection():
     """Test database connection."""
     try:
@@ -61,5 +75,5 @@ def test_connection():
             print("✅ Database connection successful")
             return True
     except Exception as e:
-        print(f"Error conectando a la base de datos: {e}")
+        print(f"Error connecting to database: {e}")
         return False 
