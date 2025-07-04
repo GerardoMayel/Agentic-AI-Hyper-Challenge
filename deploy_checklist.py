@@ -22,17 +22,18 @@ def check_environment_variables():
     print("\n🔧 Environment Variables Check:")
     print("-" * 40)
     
-    required_vars = [
+    required_env_vars = [
         "DATABASE_URL",
         "GEMINI_API_KEY", 
         "GOOGLE_CLOUD_PROJECT_ID",
-        "GOOGLE_CLOUD_BUCKET_NAME",
+        "GOOGLE_CLOUD_STORAGE_BUCKET",
+        "GOOGLE_APPLICATION_CREDENTIALS_JSON",
         "GMAIL_CREDENTIALS_JSON",
         "GMAIL_TOKEN_JSON"
     ]
     
     all_present = True
-    for var in required_vars:
+    for var in required_env_vars:
         if os.getenv(var):
             print(f"✅ {var}: Set")
         else:
