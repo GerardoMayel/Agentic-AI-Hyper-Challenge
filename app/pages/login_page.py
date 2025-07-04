@@ -82,34 +82,6 @@ def login_page():
                             class_name="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 px-8 rounded-xl font-bold text-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 transform hover:scale-105 shadow-xl mt-8"
                         ),
                         
-                        # Divider
-                        rx.hstack(
-                            rx.divider(class_name="flex-1"),
-                            rx.text("or", class_name="px-4 text-slate-500 font-medium"),
-                            rx.divider(class_name="flex-1"),
-                            class_name="w-full my-8"
-                        ),
-                        
-                        # Demo Login Info
-                        rx.box(
-                            rx.vstack(
-                                rx.text(
-                                    "Demo Access",
-                                    class_name="text-lg font-bold text-slate-800 mb-2"
-                                ),
-                                rx.text(
-                                    "Email: admin@zurich.com",
-                                    class_name="text-slate-600 text-sm"
-                                ),
-                                rx.text(
-                                    "Password: demo123",
-                                    class_name="text-slate-600 text-sm"
-                                ),
-                                class_name="text-center"
-                            ),
-                            class_name="p-4 bg-blue-50 rounded-xl border border-blue-200"
-                        ),
-                        
                         class_name="w-full max-w-md"
                     ),
                     class_name="p-8 bg-white rounded-2xl shadow-2xl border border-slate-100"
