@@ -3,6 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
+from sqlalchemy.sql import text
 
 # Cargar variables de entorno
 load_dotenv()
@@ -52,15 +53,13 @@ def drop_tables():
 
 # Función para verificar la conexión a la base de datos
 def test_connection():
-    """
-    Prueba la conexión a la base de datos.
-    Retorna True si la conexión es exitosa, False en caso contrario.
-    """
+    """Test database connection."""
     try:
-        db = SessionLocal()
-        db.execute("SELECT 1")
-        db.close()
-        return True
+        with engine.connect() as connection:
+            result = connection.execute(text("SELECT 1"))
+            result.fetchone()
+            print("✅ Database connection successful")
+            return True
     except Exception as e:
         print(f"Error conectando a la base de datos: {e}")
         return False 
