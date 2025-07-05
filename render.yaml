@@ -19,26 +19,25 @@ services:
       - key: GEMINI_API_KEY
         sync: false
       - key: GOOGLE_CLOUD_PROJECT_ID
-        sync: false
+        value: velvety-glyph-464401-v6
       - key: GOOGLE_CLOUD_STORAGE_BUCKET
-        sync: false
+        value: claims-documents-zurich-ai
       - key: GOOGLE_CLOUD_STORAGE_FOLDER
         value: documentos
-      - key: GOOGLE_APPLICATION_CREDENTIALS_JSON
-        sync: false
       - key: GMAIL_CREDENTIALS_JSON
         sync: false
       - key: GMAIL_TOKEN_JSON
         sync: false
       - key: SECRET_KEY
-        generateValue: true
-      - key: LOGLEVEL
-        value: info
+        sync: false
       - key: FROM_EMAIL
         value: gerardo_mayel_fernandez_alamilla@chiefdataaiofficer.com
+      - key: GMAIL_USER_EMAIL
+        value: gerardo_mayel_fernandez_alamilla@chiefdataaiofficer.com
+      - key: LOGLEVEL
+        value: info
 
 databases:
   - name: claims-db
-    databaseName: claims_db
-    user: claims_user
-    plan: free 
+    databaseName: claims_ropj
+    user: agent 

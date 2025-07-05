@@ -35,7 +35,7 @@ def claim_form_page():
                     class_name="text-4xl md:text-5xl font-bold text-white text-center mb-4 tracking-tight"
                 ),
                 rx.text(
-                    "Professional Insurance Claim Submission",
+                    "Insurance Claim Submission",
                     class_name="text-xl text-blue-100 text-center font-medium mb-2"
                 ),
                 rx.text(
