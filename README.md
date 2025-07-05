@@ -124,6 +124,8 @@ The application will be available at:
 2. Configure environment variables in Render
 3. The application will deploy automatically
 
+**Production URL**: https://claims-management-system-j7jz.onrender.com
+
 ## 📧 Email Processing Flow
 
 1. **Monitoring**: Application checks for new emails every 5 minutes
