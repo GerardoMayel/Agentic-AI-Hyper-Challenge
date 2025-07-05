@@ -3,6 +3,8 @@ import os
 
 # Get environment variables
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+# Check if we're in production environment
+IS_PRODUCTION = os.getenv("ENVIRONMENT") == "production" or os.getenv("RENDER") == "true"
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///claims_management.db")
 
 # Handle Render PostgreSQL URL format
@@ -13,12 +15,12 @@ if DATABASE_URL.startswith("postgres://"):
 config = rx.Config(
     app_name="app",
     db_url=DATABASE_URL,
-    env=rx.Env.DEV if ENVIRONMENT == "development" else rx.Env.PROD,
+    env=rx.Env.DEV if not IS_PRODUCTION else rx.Env.PROD,
     frontend_port=3000,
     backend_port=8000,
     backend_host="0.0.0.0",  # Important for Render
-    api_url="http://localhost:8000" if ENVIRONMENT == "development" else None,
-    deploy_url="https://claims-management-system.onrender.com" if ENVIRONMENT == "production" else None,
+    api_url="http://localhost:8000" if not IS_PRODUCTION else os.getenv("API_URL", "https://claims-management-system-j7jz.onrender.com"),
+    deploy_url="https://claims-management-system-j7jz.onrender.com" if IS_PRODUCTION else None,
     cors_allowed_origins=["*"],
     loglevel="info",
     # Tailwind configuration
