@@ -1,15 +1,24 @@
 import reflex as rx
 import os
 
+# Se obtiene la URL de la base de datos directamente de las variables de entorno.
+# En Render, esta variable es inyectada automáticamente por el archivo render.yaml.
+# Esto elimina la dependencia de un archivo SQLite local.
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+# Verificación para asegurar que la app no inicie sin una base de datos en producción.
+if not DATABASE_URL:
+    raise ValueError("La variable de entorno DATABASE_URL no está configurada.")
+
 # Handle Render PostgreSQL URL format
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///claims_management.db")
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-# Configure the app
 config = rx.Config(
     app_name="app",
     db_url=DATABASE_URL,
+    env=rx.Env.PROD,  # Forzar modo producción para Render
+    backend_host="0.0.0.0",  # Importante para Render
     cors_allowed_origins=["*"],
     loglevel="info",
     # Tailwind configuration
