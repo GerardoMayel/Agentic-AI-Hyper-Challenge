@@ -8,7 +8,7 @@ services:
       pip install -r requirements.txt
       reflex init
       reflex export
-    startCommand: "reflex run --env prod --host 0.0.0.0 --port $PORT"
+    startCommand: "reflex run --env prod --backend-host 0.0.0.0 --backend-port $PORT"
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
