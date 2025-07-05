@@ -23,9 +23,9 @@ from app.core.database import test_connection, create_tables
 app = rx.App()
 
 # Add pages to the application
-app.add_page(index_page)
-app.add_page(login_page)
-app.add_page(dashboard_page)
+app.add_page(index_page, route="/")
+app.add_page(login_page, route="/login")
+app.add_page(dashboard_page, route="/dashboard")
 app.add_page(claim_form_page, route="/claim-form")
 
 def initialize_app():
