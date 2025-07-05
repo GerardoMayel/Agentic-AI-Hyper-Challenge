@@ -5,7 +5,7 @@ services:
     plan: free
     buildCommand: |
       pip install -r requirements.txt
-    startCommand: reflex run --env prod --app app.app:app --host 0.0.0.0 --port $PORT
+    startCommand: reflex run --env prod --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
