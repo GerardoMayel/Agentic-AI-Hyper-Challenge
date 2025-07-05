@@ -17,9 +17,8 @@ if DATABASE_URL.startswith("postgres://"):
 config = rx.Config(
     app_name="app",
     db_url=DATABASE_URL,
-    
-    # Se eliminan las configuraciones de puerto y API URL condicionales.
-    # Reflex en modo de producción ahora manejará esto de forma inteligente.
+    env=rx.Env.PROD,  # Forzar modo producción para Render
+    backend_host="0.0.0.0",  # Importante para Render
     cors_allowed_origins=["*"],
     loglevel="info",
     # Tailwind configuration
