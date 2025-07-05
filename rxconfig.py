@@ -19,7 +19,7 @@ config = rx.Config(
     frontend_port=3000,
     backend_port=8000,
     backend_host="0.0.0.0",  # Important for Render
-    api_url="http://localhost:8000" if not IS_PRODUCTION else os.getenv("API_URL", "https://claims-management-system-j7jz.onrender.com"),
+    api_url="http://localhost:8000" if not IS_PRODUCTION else os.getenv("REFLEX_API_URL", "https://claims-management-system-j7jz.onrender.com"),
     deploy_url="https://claims-management-system-j7jz.onrender.com" if IS_PRODUCTION else None,
     cors_allowed_origins=["*"],
     loglevel="info",
@@ -38,5 +38,7 @@ config = rx.Config(
                 }
             }
         }
-    }
+    },
+    # Add Tailwind plugin explicitly
+    plugins=[]
 ) 
