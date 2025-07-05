@@ -19,6 +19,8 @@ config = rx.Config(
     db_url=DATABASE_URL,
     env=rx.Env.PROD,  # Forzar modo producción para Render
     backend_host="0.0.0.0",  # Importante para Render
+    backend_port=8000,  # Puerto del backend
+    frontend_port=3000,  # Puerto del frontend (para desarrollo)
     cors_allowed_origins=["*"],
     loglevel="info",
     # Tailwind configuration
