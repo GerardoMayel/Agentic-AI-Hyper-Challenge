@@ -1,26 +1,25 @@
 import reflex as rx
 import os
 
-# Get environment variables
-ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
-# Check if we're in production environment
-IS_PRODUCTION = os.getenv("ENVIRONMENT") == "production" or os.getenv("RENDER") == "true"
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///claims_management.db")
+# Se obtiene la URL de la base de datos directamente de las variables de entorno.
+# En Render, esta variable es inyectada automáticamente por el archivo render.yaml.
+# Esto elimina la dependencia de un archivo SQLite local.
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+# Verificación para asegurar que la app no inicie sin una base de datos en producción.
+if not DATABASE_URL:
+    raise ValueError("La variable de entorno DATABASE_URL no está configurada.")
 
 # Handle Render PostgreSQL URL format
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-# Configure the app
 config = rx.Config(
     app_name="app",
     db_url=DATABASE_URL,
-    env=rx.Env.DEV if not IS_PRODUCTION else rx.Env.PROD,
-    frontend_port=3000 if not IS_PRODUCTION else None,
-    backend_port=8000 if not IS_PRODUCTION else None,
-    backend_host="0.0.0.0",  # Important for Render
-    api_url="http://localhost:8000" if not IS_PRODUCTION else os.getenv("REFLEX_API_URL", "https://claims-management-system-j7jz.onrender.com"),
-    deploy_url="https://claims-management-system-j7jz.onrender.com" if IS_PRODUCTION else None,
+    
+    # Se eliminan las configuraciones de puerto y API URL condicionales.
+    # Reflex en modo de producción ahora manejará esto de forma inteligente.
     cors_allowed_origins=["*"],
     loglevel="info",
     # Tailwind configuration
@@ -39,6 +38,5 @@ config = rx.Config(
             }
         }
     },
-    # Add Tailwind plugin explicitly
     plugins=[]
 ) 
