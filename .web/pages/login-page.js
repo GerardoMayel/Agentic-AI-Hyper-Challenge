@@ -92,34 +92,7 @@ NextLink,
 RadixThemesButton,
 {className:"w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 px-8 rounded-xl font-bold text-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 transform hover:scale-105 shadow-xl mt-8",css:({ ["type"] : "submit" })},
 "Sign In"
-,),jsx(
-RadixThemesFlex,
-{align:"start",className:"rx-Stack w-full my-8",direction:"row",gap:"3"},
-jsx(RadixThemesSeparator,{className:"flex-1",size:"4"},)
-,jsx(
-RadixThemesText,
-{as:"p",className:"px-4 text-slate-500 font-medium"},
-"or"
-,),jsx(RadixThemesSeparator,{className:"flex-1",size:"4"},)
-,),jsx(
-RadixThemesBox,
-{className:"p-4 bg-blue-50 rounded-xl border border-blue-200"},
-jsx(
-RadixThemesFlex,
-{align:"start",className:"rx-Stack text-center",direction:"column",gap:"3"},
-jsx(
-RadixThemesText,
-{as:"p",className:"text-lg font-bold text-slate-800 mb-2"},
-"Demo Access"
-,),jsx(
-RadixThemesText,
-{as:"p",className:"text-slate-600 text-sm"},
-"Email: admin@zurich.com"
-,),jsx(
-RadixThemesText,
-{as:"p",className:"text-slate-600 text-sm"},
-"Password: demo123"
-,),),),),),jsx(
+,),),),jsx(
 RadixThemesFlex,
 {align:"start",className:"rx-Stack mt-8",direction:"column",gap:"3"},
 jsx(

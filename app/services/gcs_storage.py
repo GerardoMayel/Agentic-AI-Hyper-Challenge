@@ -3,12 +3,14 @@ Servicio para manejar el almacenamiento en Google Cloud Storage.
 """
 
 import os
+import json
 import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, BinaryIO
 from google.cloud import storage
 from google.auth.exceptions import DefaultCredentialsError
+from google.oauth2 import service_account
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -22,13 +24,32 @@ class GoogleCloudStorageService:
         self.base_folder = os.getenv('GOOGLE_CLOUD_STORAGE_FOLDER', 'documentos')
         
         try:
-            # Intentar usar Application Default Credentials
-            self.client = storage.Client(project=self.project_id)
+            # Intentar usar Service Account JSON desde variable de entorno
+            credentials_json = os.getenv('GOOGLE_APPLICATION_CREDENTIALS_JSON')
+            if credentials_json:
+                try:
+                    credentials_info = json.loads(credentials_json)
+                    credentials = service_account.Credentials.from_service_account_info(credentials_info)
+                    self.client = storage.Client(project=self.project_id, credentials=credentials)
+                    print(f"✅ Conectado a Google Cloud Storage usando Service Account JSON: {self.bucket_name}")
+                except (json.JSONDecodeError, Exception) as e:
+                    print(f"⚠️ Error con Service Account JSON: {e}")
+                    print("   Intentando Application Default Credentials...")
+                    # Fallback a Application Default Credentials
+                    self.client = storage.Client(project=self.project_id)
+                    print(f"✅ Conectado a Google Cloud Storage usando ADC: {self.bucket_name}")
+            else:
+                # Usar Application Default Credentials
+                self.client = storage.Client(project=self.project_id)
+                print(f"✅ Conectado a Google Cloud Storage usando ADC: {self.bucket_name}")
+            
             self.bucket = self.client.bucket(self.bucket_name)
-            print(f"✅ Conectado a Google Cloud Storage: {self.bucket_name}")
+            
         except DefaultCredentialsError:
             print("❌ Error: No se encontraron credenciales de Google Cloud")
-            print("   Ejecuta: gcloud auth application-default login")
+            print("   Opciones:")
+            print("   1. Ejecuta: gcloud auth application-default login")
+            print("   2. Configura GOOGLE_APPLICATION_CREDENTIALS_JSON en .env")
             self.client = None
             self.bucket = None
         except Exception as e:
