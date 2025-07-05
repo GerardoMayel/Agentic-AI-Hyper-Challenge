@@ -252,5 +252,18 @@ credentials.json
 token.json
 credentials.example.json
 
+# Environment configuration scripts (contain sensitive data)
+setup_env.py
+setup_env_template.py
+env_setup.py
+environment_setup.py
+
+# Sensitive configuration files
+client_secret_*.json
+token.json
+*.key
+*.pem
+*.p12
+
 # Email processing results
 email_validation_report.json
