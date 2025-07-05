@@ -36,6 +36,8 @@ services:
         value: gerardo_mayel_fernandez_alamilla@chiefdataaiofficer.com
       - key: REFLEX_LOG_LEVEL
         value: debug
+      - key: API_URL
+        value: https://claims-management-system-j7jz.onrender.com
 
 databases:
   - name: claims-db
