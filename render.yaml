@@ -38,6 +38,11 @@ services:
         value: gerardo_mayel_fernandez_alamilla@chiefdataaiofficer.com
       - key: REFLEX_LOG_LEVEL
         value: debug
+      - key: RENDER_EXTERNAL_URL
+        fromService:
+          type: web
+          name: claims-management-system
+          property: url
 
 
 databases:
