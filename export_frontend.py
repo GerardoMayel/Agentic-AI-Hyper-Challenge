@@ -7,6 +7,7 @@ Este script se usa para generar archivos estáticos sin requerir conexión a bas
 import os
 import subprocess
 import sys
+import shutil
 
 def export_frontend():
     """Exporta solo el frontend de la aplicación."""
@@ -25,10 +26,36 @@ def export_frontend():
         print("✅ Frontend estático exportado exitosamente")
         print(f"📁 Archivos generados en: .web/public")
         
-        # Mostrar contenido del directorio
-        if os.path.exists(".web/public"):
-            files = os.listdir(".web/public")
-            print(f"📄 Archivos generados: {len(files)}")
+        # Verificar si existe el directorio pages y copiar archivos
+        pages_dir = ".web/pages"
+        public_dir = ".web/public"
+        
+        if os.path.exists(pages_dir):
+            print(f"📄 Copiando archivos de {pages_dir} a {public_dir}...")
+            
+            # Crear directorio public si no existe
+            os.makedirs(public_dir, exist_ok=True)
+            
+            # Copiar todos los archivos de pages a public
+            for item in os.listdir(pages_dir):
+                src = os.path.join(pages_dir, item)
+                dst = os.path.join(public_dir, item)
+                
+                if os.path.isfile(src):
+                    shutil.copy2(src, dst)
+                    print(f"   ✅ Copiado: {item}")
+                elif os.path.isdir(src):
+                    if os.path.exists(dst):
+                        shutil.rmtree(dst)
+                    shutil.copytree(src, dst)
+                    print(f"   ✅ Copiado directorio: {item}")
+        else:
+            print(f"⚠️  Directorio {pages_dir} no encontrado")
+        
+        # Mostrar contenido final del directorio public
+        if os.path.exists(public_dir):
+            files = os.listdir(public_dir)
+            print(f"📄 Archivos finales en {public_dir}: {len(files)}")
             for file in files[:10]:  # Mostrar primeros 10 archivos
                 print(f"   - {file}")
             if len(files) > 10:
