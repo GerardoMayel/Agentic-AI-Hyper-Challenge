@@ -1,12 +1,13 @@
+# rxconfig.py - VERSIÓN CORREGIDA FINAL
 import reflex as rx
 import os
 
-# Se obtiene la URL de la base de datos directamente de las variables de entorno.
-# En Render, esta variable es inyectada automáticamente por el archivo render.yaml.
-# Esto elimina la dependencia de un archivo SQLite local.
-DATABASE_URL = os.getenv("DATABASE_URL")
+# Detecta si la aplicación está corriendo en el entorno de Render.
+# Render establece la variable de entorno 'RENDER' a 'true' automáticamente.
+IS_PRODUCTION = os.getenv("RENDER") == "true"
 
-# Verificación para asegurar que la app no inicie sin una base de datos en producción.
+# Define la configuración de la base de datos
+DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise ValueError("La variable de entorno DATABASE_URL no está configurada.")
 
@@ -14,13 +15,17 @@ if not DATABASE_URL:
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
+# Configuración principal de la aplicación
 config = rx.Config(
     app_name="app",
     db_url=DATABASE_URL,
-    env=rx.Env.PROD,  # Forzar modo producción para Render
-    backend_host="0.0.0.0",  # Importante para Render
-    backend_port=8000,  # Puerto del backend
-    frontend_port=3000,  # Puerto del frontend (para desarrollo)
+    
+    # --- CAMBIOS CLAVE AQUÍ ---
+    # En producción, el frontend (servido por el backend) necesita saber
+    # que la API está en la misma URL, no en localhost.
+    # Reflex usa la variable RENDER_EXTERNAL_URL que definimos en render.yaml.
+    api_url=os.getenv("RENDER_EXTERNAL_URL", "http://0.0.0.0:8000") if IS_PRODUCTION else "http://localhost:8000",
+
     cors_allowed_origins=["*"],
     loglevel="info",
     # Tailwind configuration
