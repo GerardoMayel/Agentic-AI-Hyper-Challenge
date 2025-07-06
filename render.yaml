@@ -24,19 +24,15 @@ services:
   - type: web
     name: zurich-claims-frontend
     env: static
-    plan: free
-    buildCommand: |
-      cd frontend
-      npm install
-      npm run build
-    staticPublishPath: ./frontend/out
-    envVars:
-      - key: NEXT_PUBLIC_API_URL
-        value: https://zurich-claims-api.onrender.com
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/out
     routes:
       - type: rewrite
         source: /*
         destination: /index.html
+    envVars:
+      - key: NODE_ENV
+        value: production
 
 databases:
   - name: claims-db
