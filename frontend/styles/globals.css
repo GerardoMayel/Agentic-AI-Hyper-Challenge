@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Estilos personalizados para Zurich Insurance */
+.zurich-gradient {
+  background: linear-gradient(135deg, #0066CC 0%, #004499 100%);
+}
+
+.zurich-shadow {
+  box-shadow: 0 20px 25px -5px rgba(0, 102, 204, 0.1), 0 10px 10px -5px rgba(0, 102, 204, 0.04);
+} 
