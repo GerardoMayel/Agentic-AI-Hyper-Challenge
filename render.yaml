@@ -7,7 +7,6 @@ services:
       pip install --upgrade pip
       pip install -r requirements.txt
       reflex init
-      reflex export
     startCommand: "reflex run --env prod --backend-host 0.0.0.0 --backend-port $PORT"
     envVars:
       - key: PYTHON_VERSION
