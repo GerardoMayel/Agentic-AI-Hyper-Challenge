@@ -18,9 +18,9 @@ def export_frontend():
     os.environ["STATIC_MODE"] = "true"
     
     try:
-        # Ejecutar reflex export
+        # Ejecutar reflex export con --frontend-only
         result = subprocess.run([
-            "reflex", "export"
+            "reflex", "export", "--frontend-only"
         ], capture_output=True, text=True, check=True)
         
         print("✅ Frontend estático exportado exitosamente")
@@ -51,6 +51,17 @@ def export_frontend():
                     print(f"   ✅ Copiado directorio: {item}")
         else:
             print(f"⚠️  Directorio {pages_dir} no encontrado")
+            print("🔍 Buscando archivos HTML en otros directorios...")
+            
+            # Buscar archivos HTML en .web
+            web_dir = ".web"
+            if os.path.exists(web_dir):
+                for root, dirs, files in os.walk(web_dir):
+                    for file in files:
+                        if file.endswith('.html'):
+                            print(f"   📄 Encontrado HTML: {os.path.join(root, file)}")
+                        elif file.endswith('.js') and 'index' in file:
+                            print(f"   📄 Encontrado JS principal: {os.path.join(root, file)}")
         
         # Mostrar contenido final del directorio public
         if os.path.exists(public_dir):
