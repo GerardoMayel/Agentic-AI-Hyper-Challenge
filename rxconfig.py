@@ -1,7 +1,12 @@
+# rxconfig.py - Configuración para arquitectura de dos servicios
 import reflex as rx
 import os
 
-# Configuración simple y directa para Render
+# La URL de la API se inyecta durante la construcción en Render
+# a través de la variable de entorno REFLEX_API_URL.
+# Para el desarrollo local, se usa el valor por defecto.
+API_URL = os.getenv("REFLEX_API_URL", "http://localhost:8000")
+
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise ValueError("La variable de entorno DATABASE_URL no está configurada.")
@@ -10,12 +15,10 @@ if not DATABASE_URL:
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-# Configuración mínima para funcionar en Render
 config = rx.Config(
     app_name="app",
     db_url=DATABASE_URL,
-    env=rx.Env.PROD,
-    backend_host="0.0.0.0",
+    api_url=API_URL,
     cors_allowed_origins=["*"],
     loglevel="info",
     # Tailwind configuration

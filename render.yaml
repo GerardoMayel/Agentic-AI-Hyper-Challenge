@@ -1,13 +1,11 @@
 services:
+  # --- SERVICIO 1: Backend API (Python/FastAPI) ---
   - type: web
-    name: claims-management-system
+    name: claims-management-system-backend
     env: python
     plan: free
-    buildCommand: |
-      pip install --upgrade pip
-      pip install -r requirements.txt
-      reflex init
-    startCommand: "reflex run --env prod --backend-host 0.0.0.0 --backend-port $PORT"
+    buildCommand: "pip install --upgrade pip && pip install -r requirements.txt"
+    startCommand: "reflex run --env prod --backend-only --backend-host 0.0.0.0 --backend-port $PORT"
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
@@ -37,12 +35,25 @@ services:
         value: gerardo_mayel_fernandez_alamilla@chiefdataaiofficer.com
       - key: REFLEX_LOG_LEVEL
         value: debug
-      - key: RENDER_EXTERNAL_URL
+
+  # --- SERVICIO 2: Frontend Estático (Next.js) ---
+  - type: static
+    name: claims-management-system-frontend
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+      reflex export
+    publishDir: ".web/public"
+    routes:
+      - type: rewrite
+        source: "/*"
+        destination: "/index.html"
+    envVars:
+      - key: REFLEX_API_URL
         fromService:
           type: web
-          name: claims-management-system
+          name: claims-management-system-backend
           property: url
-
 
 databases:
   - name: claims-db
