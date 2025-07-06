@@ -1,0 +1,24 @@
+# Backend FastAPI Dependencies
+fastapi==0.115.14
+uvicorn[standard]==0.35.0
+python-multipart==0.0.20
+python-dotenv==1.0.0
+
+# Database
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.9
+alembic>=1.15.2
+
+# Google Services
+google-auth==2.40.3
+google-auth-oauthlib==1.2.2
+google-auth-httplib2==0.2.0
+google-api-python-client==2.175.0
+google-cloud-storage==2.10.0
+google-generativeai==0.3.2
+
+# Email
+requests==2.32.4
+
+# Utilities
+pydantic==2.11.7 

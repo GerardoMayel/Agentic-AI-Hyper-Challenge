@@ -1,59 +1,42 @@
 services:
-  # --- SERVICIO 1: Backend API (Python/FastAPI) ---
+  # Backend API Service
   - type: web
-    name: claims-management-system-backend
+    name: zurich-claims-api
     env: python
     plan: free
-    buildCommand: "pip install --upgrade pip && pip install -r requirements.txt"
-    startCommand: "reflex run --env prod --backend-only --backend-host 0.0.0.0 --backend-port $PORT"
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.0
-      - key: ENVIRONMENT
-        value: production
-      - key: DATABASE_URL
-        fromDatabase:
-          name: claims-db
-          property: connectionString
-      - key: GEMINI_API_KEY
-        sync: false
-      - key: GOOGLE_CLOUD_PROJECT_ID
-        value: velvety-glyph-464401-v6
-      - key: GOOGLE_CLOUD_STORAGE_BUCKET
-        value: claims-documents-zurich-ai
-      - key: GOOGLE_CLOUD_STORAGE_FOLDER
-        value: documentos
-      - key: GMAIL_CREDENTIALS_JSON
-        sync: false
-      - key: GMAIL_TOKEN_JSON
-        sync: false
-      - key: SECRET_KEY
-        sync: false
-      - key: FROM_EMAIL
-        value: gerardo_mayel_fernandez_alamilla@chiefdataaiofficer.com
-      - key: GMAIL_USER_EMAIL
-        value: gerardo_mayel_fernandez_alamilla@chiefdataaiofficer.com
-      - key: REFLEX_LOG_LEVEL
-        value: debug
-
-  # --- SERVICIO 2: Frontend Estático (Next.js) ---
-  - type: static
-    name: claims-management-system-frontend
     buildCommand: |
       pip install --upgrade pip
-      pip install -r requirements.txt
-      reflex export
-    publishDir: ".web/public"
+      pip install -r backend/requirements.txt
+    startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: GMAIL_CREDENTIALS_FILE
+        sync: false
+      - key: GOOGLE_CLOUD_STORAGE_BUCKET
+        sync: false
+      - key: GOOGLE_APPLICATION_CREDENTIALS
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+
+  # Frontend Static Site
+  - type: web
+    name: zurich-claims-frontend
+    env: static
+    plan: free
+    buildCommand: |
+      cd frontend
+      npm install
+      npm run build
+    staticPublishPath: ./frontend/out
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: https://zurich-claims-api.onrender.com
     routes:
       - type: rewrite
-        source: "/*"
-        destination: "/index.html"
-    envVars:
-      - key: REFLEX_API_URL
-        fromService:
-          type: web
-          name: claims-management-system-backend
-          property: url
+        source: /*
+        destination: /index.html
 
 databases:
   - name: claims-db

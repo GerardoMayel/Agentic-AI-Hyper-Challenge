@@ -1,5 +1,5 @@
 # Core dependencies
-reflex==0.8.0
+reflex==0.7.10
 python-dotenv==1.0.0
 sqlalchemy==2.0.23
 psycopg2-binary==2.9.9

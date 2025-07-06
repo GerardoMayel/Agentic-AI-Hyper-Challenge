@@ -1,1 +1,0 @@
-# Archivos estáticos y assets de la aplicación 
