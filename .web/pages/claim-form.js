@@ -11,7 +11,7 @@ import { jsx } from "@emotion/react"
 
 
 
-export function Root_b0d4b230eba96c50422d9f3c38c15f94 () {
+export function Root_8fa74280ed3f92d72ddb93fc65ad3865 () {
   
   const [addEvents, connectErrors] = useContext(EventLoopContext);
 
@@ -275,7 +275,7 @@ jsx(
 RadixThemesText,
 {as:"p",className:"text-sm font-semibold text-slate-700 mb-2"},
 "Initial Deposit Date"
-,),jsx(RadixThemesTextField.Root,{className:"w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm cursor-pointer",css:({ ["type"] : "date" }),max:"2025-07-04",placeholder:"Select deposit date"},)
+,),jsx(RadixThemesTextField.Root,{className:"w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm cursor-pointer",css:({ ["type"] : "date" }),max:"2025-07-05",placeholder:"Select deposit date"},)
 ,),),),),),jsx(
 RadixThemesBox,
 {},
@@ -306,7 +306,7 @@ jsx(
 RadixThemesText,
 {as:"p",className:"text-sm font-semibold text-slate-700 mb-2"},
 "Date of Incident *"
-,),jsx(RadixThemesTextField.Root,{className:"w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm cursor-pointer",css:({ ["type"] : "date" }),max:"2025-07-04",placeholder:"Select incident date"},)
+,),jsx(RadixThemesTextField.Root,{className:"w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-600 transition-all duration-300 bg-white shadow-sm cursor-pointer",css:({ ["type"] : "date" }),max:"2025-07-05",placeholder:"Select incident date"},)
 ,),jsx(
 RadixThemesFlex,
 {align:"start",className:"rx-Stack flex-1",direction:"column",gap:"3"},
@@ -464,7 +464,7 @@ RadixThemesText,
 ,),),jsx(
 RadixThemesBox,
 {className:"w-full bg-gray-100 min-h-screen"},
-jsx(Root_b0d4b230eba96c50422d9f3c38c15f94,{},)
+jsx(Root_8fa74280ed3f92d72ddb93fc65ad3865,{},)
 ,),),jsx(
 NextHead,
 {},
