@@ -183,7 +183,7 @@ tester.send_email(to_email, subject, body, is_html=True)
 
 ### 4. **Archivo y Backup**
 - Descarga automática de adjuntos
-- Almacenamiento en Cloudflare R2
+- Almacenamiento en Google Cloud Storage
 - Indexación para búsqueda
 
 ## 🎯 **VENTAJAS DEL SISTEMA**

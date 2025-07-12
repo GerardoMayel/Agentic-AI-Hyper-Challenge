@@ -7,17 +7,54 @@ services:
     buildCommand: |
       pip install --upgrade pip
       pip install -r backend/requirements.txt
-    startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
+    startCommand: cd backend && PYTHONPATH=/opt/render/project/src/backend python -m uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
+      # Database Configuration
       - key: DATABASE_URL
-        sync: false
-      - key: GMAIL_CREDENTIALS_FILE
-        sync: false
+        value: postgresql://agent:DoyP8c9r4AV7Y2x12OyEJub8si46wavT@dpg-d1gb61bipnbc73agtmm0-a.oregon-postgres.render.com/claims_ropj
+      
+      # Google Cloud Storage Configuration
       - key: GOOGLE_CLOUD_STORAGE_BUCKET
+        value: claims-documents-zurich-ai
+      - key: GOOGLE_APPLICATION_CREDENTIALS_JSON
         sync: false
-      - key: GOOGLE_APPLICATION_CREDENTIALS
-        sync: false
+      - key: GOOGLE_CLOUD_PROJECT_ID
+        value: velvety-glyph-464401-v6
+      - key: GOOGLE_CLOUD_STORAGE_FOLDER
+        value: documentos
+      
+      # AI/ML Services
       - key: GEMINI_API_KEY
+        sync: false
+      
+      # Gmail API Configuration
+      - key: GMAIL_CREDENTIALS_JSON
+        sync: false
+      - key: GMAIL_TOKEN_JSON
+        sync: false
+      
+      # Application Configuration
+      - key: ENVIRONMENT
+        value: production
+      - key: SECRET_KEY
+        sync: false
+      - key: FROM_EMAIL
+        value: gerardo_mayel_fernandez_alamilla@chiefdataaiofficer.com
+      - key: GMAIL_USER_EMAIL
+        value: gerardo_mayel_fernandez_alamilla@chiefdataaiofficer.com
+      - key: LOGLEVEL
+        value: info
+      
+      # External Services
+      - key: RESEND_API_KEY
+        sync: false
+      
+      # Domain Configuration
+      - key: DOMAIN_NAME
+        value: chiefdataaiofficer.com
+      - key: WEBHOOK_EMAIL
+        value: prueba@send.chiefdataaiofficer.com
+      - key: RESEND_WEBHOOK_SECRET
         sync: false
 
   # Frontend Static Site
@@ -33,6 +70,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NEXT_PUBLIC_API_URL
+        value: https://zurich-claims-api.onrender.com
 
 databases:
   - name: claims-db

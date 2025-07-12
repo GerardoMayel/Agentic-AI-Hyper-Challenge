@@ -528,9 +528,78 @@ export default function ClaimForm() {
       return
     }
 
-    // Here it would be sent to the FastAPI backend
-    console.log('Form data:', { formData, expenses, files, totalAmount })
-    alert('Form submitted successfully. It will be processed by the backend.')
+    try {
+      // Preparar datos del claim para el backend
+      const claimData = {
+        coverage_type: formData.claimType,
+        full_name: formData.fullName,
+        email: formData.email,
+        phone: formData.mobilePhone,
+        policy_number: formData.policyNumber,
+        incident_date: formData.lossDate ? new Date(formData.lossDate).isoformat() : null,
+        incident_location: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`,
+        description: formData.incidentDescription,
+        estimated_amount: totalAmount
+      }
+
+      // 1. Crear el claim en el backend
+      console.log('Sending claim data to backend:', claimData)
+      
+      const claimResponse = await fetch('http://localhost:8000/api/claims', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(claimData)
+      })
+
+      if (!claimResponse.ok) {
+        throw new Error(`Error creating claim: ${claimResponse.statusText}`)
+      }
+
+      const claimResult = await claimResponse.json()
+      console.log('Claim created:', claimResult)
+
+      if (!claimResult.success) {
+        throw new Error(claimResult.message || 'Failed to create claim')
+      }
+
+      const claimId = claimResult.data.claim_id
+      console.log('Claim ID generated:', claimId)
+
+      // 2. Subir documentos
+      console.log('Uploading documents...')
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('document_type', `DOCUMENT_${i + 1}`)
+        formData.append('upload_notes', `Uploaded via web form - ${file.name}`)
+
+        const documentResponse = await fetch(`http://localhost:8000/api/claims/${claimId}/documents`, {
+          method: 'POST',
+          body: formData
+        })
+
+        if (!documentResponse.ok) {
+          console.warn(`Warning: Failed to upload document ${file.name}: ${documentResponse.statusText}`)
+        } else {
+          const documentResult = await documentResponse.json()
+          console.log(`Document ${file.name} uploaded:`, documentResult)
+        }
+      }
+
+      // 3. Mostrar éxito
+      alert(`Claim submitted successfully!\n\nClaim ID: ${claimId}\n\nYour claim has been created and documents uploaded. You will receive a confirmation email shortly.`)
+      
+      // 4. Limpiar formulario (opcional)
+      // window.location.href = '/dashboard' // Redirigir al dashboard
+      
+    } catch (error) {
+      console.error('Error submitting claim:', error)
+      alert(`Error submitting claim: ${error.message}`)
+    }
   }
 
   return (

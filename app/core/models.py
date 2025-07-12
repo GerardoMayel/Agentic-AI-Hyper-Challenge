@@ -1,6 +1,6 @@
 # Este archivo define los modelos de la base de datos usando SQLAlchemy.
 
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, BigInteger, ForeignKey, Enum, Numeric
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, BigInteger, ForeignKey, Enum, Numeric, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -81,6 +81,35 @@ class ClaimDocument(Base):
     
     # Relationships
     claim = relationship("Claim", back_populates="documents")
+    ocr_data = relationship("DocumentOCR", back_populates="document", uselist=False, cascade="all, delete-orphan")
+
+class DocumentOCR(Base):
+    """OCR processed data from documents."""
+    __tablename__ = 'documents_ocr'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    document_id = Column(Integer, ForeignKey('DOCUMENTS.id', ondelete='CASCADE'), nullable=False, index=True)
+    
+    # OCR processing information
+    processed_at = Column(DateTime, default=func.now())
+    processing_status = Column(String(50), default='pending')  # 'pending', 'processing', 'completed', 'failed'
+    error_message = Column(Text, nullable=True)
+    
+    # Extracted text data
+    raw_text = Column(Text, nullable=True)  # Texto extraído crudo
+    structured_data = Column(JSON, nullable=True)  # Datos estructurados en formato key-value
+    confidence_score = Column(Numeric(5, 4), nullable=True)  # Puntuación de confianza del OCR
+    
+    # Gemini processing metadata
+    gemini_model_used = Column(String(100), nullable=True)
+    processing_time_seconds = Column(Numeric(10, 3), nullable=True)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    document = relationship("Document", back_populates="ocr_data")
 
 class ClaimFormSubmission(Base):
     """Form submissions for claims - ALINEADO CON EL FORMULARIO."""

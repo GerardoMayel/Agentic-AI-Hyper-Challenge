@@ -17,6 +17,9 @@ google-cloud-storage==2.10.0
 # AI/ML services
 google-generativeai==0.3.2
 
+# Image processing for OCR
+Pillow>=10.0.0
+
 # Additional utilities
 requests
 python-multipart
@@ -25,8 +28,8 @@ python-multipart
 annotated-types
 anyio
 bidict
-boto3
-botocore
+
+
 cachetools
 certifi
 charset-normalizer

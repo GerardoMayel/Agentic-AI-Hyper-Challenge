@@ -1,25 +1,28 @@
 """
 Backend FastAPI para el Claims Management System
-Extraído de la aplicación Reflex existente
 """
 
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
-from typing import Optional, List
+from sqlalchemy.orm import Session
 import os
 from dotenv import load_dotenv
 
 # Cargar variables de entorno
 load_dotenv()
 
-# Importar servicios existentes
-from app.services.claims_processor import ClaimsProcessor
-from app.services.email_service import EmailService
-from app.services.gcs_storage import GCSStorage
-from app.services.llm_service import LLMService
-from app.core.models import Claim
+# Importar componentes de la nueva estructura
+from app.core.database import get_db, engine, Base
+from app.models.claim_models import ClaimForm, Document
+from app.models.schemas import (
+    ClaimFormCreate, 
+    ClaimFormResponse, 
+    DocumentCreate, 
+    DocumentResponse,
+    APIResponse
+)
+from app.services.storage_service import StorageService
 
 # Crear aplicación FastAPI
 app = FastAPI(
@@ -37,25 +40,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Modelos Pydantic para la API
-class ClaimRequest(BaseModel):
-    coverage_type: str
-    full_name: str
-    email: str
-    description: Optional[str] = None
-    amount: Optional[float] = None
-
-class ClaimResponse(BaseModel):
-    id: str
-    status: str
-    message: str
-    claim_number: Optional[str] = None
-
 # Inicializar servicios
-claims_processor = ClaimsProcessor()
-email_service = EmailService()
-storage_service = GCSStorage()
-llm_service = LLMService()
+storage_service = StorageService()
+
+@app.on_event("startup")
+async def startup_event():
+    """Evento de inicio - verificar conexión a base de datos"""
+    try:
+        # Solo verificar conexión, no crear tablas
+        from sqlalchemy import text
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1")).fetchone()
+        print("✅ Database connection verified")
+    except Exception as e:
+        print(f"❌ Error connecting to database: {str(e)}")
+        print("⚠️  Server will start but database operations may fail")
 
 @app.get("/")
 async def root():
@@ -74,7 +73,6 @@ async def health_check():
         services_status = {
             "api": "healthy",
             "database": "connected" if os.getenv("DATABASE_URL") else "not_configured",
-            "email": "configured" if os.getenv("GMAIL_CREDENTIALS_FILE") else "not_configured",
             "storage": "configured" if os.getenv("GOOGLE_CLOUD_STORAGE_BUCKET") else "not_configured"
         }
         
@@ -85,103 +83,193 @@ async def health_check():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Health check failed: {str(e)}")
 
-@app.post("/api/claims", response_model=ClaimResponse)
-async def create_claim(claim_data: ClaimRequest):
+@app.post("/api/claims", response_model=APIResponse)
+async def create_claim(
+    claim_data: ClaimFormCreate,
+    db: Session = Depends(get_db)
+):
     """Crear un nuevo siniestro"""
     try:
-        # Procesar el siniestro
-        claim = Claim(
-            coverage_type=claim_data.coverage_type,
-            full_name=claim_data.full_name,
-            email=claim_data.email,
-            description=claim_data.description,
-            amount=claim_data.amount,
-            status="pending"
-        )
+        print(f"Received claim data: {claim_data.dict()}")
         
-        # Procesar con el servicio existente
-        result = await claims_processor.process_claim(claim)
+        # Crear nuevo claim en la base de datos
+        db_claim = ClaimForm(**claim_data.dict())
+        db.add(db_claim)
+        db.commit()
+        db.refresh(db_claim)
         
-        return ClaimResponse(
-            id=str(result.get("id", "generated_id")),
-            status="submitted",
-            message="Claim submitted successfully",
-            claim_number=result.get("claim_number")
+        print(f"Claim created successfully: {db_claim.claim_id}")
+        
+        return APIResponse(
+            success=True,
+            message="Claim created successfully",
+            data={
+                "id": db_claim.id,
+                "claim_id": db_claim.claim_id,
+                "status": db_claim.status
+            }
         )
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing claim: {str(e)}")
+        db.rollback()
+        print(f"Error creating claim: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error creating claim: {str(e)}")
 
-@app.post("/api/claims/upload")
+@app.post("/api/claims/{claim_id}/documents", response_model=APIResponse)
 async def upload_claim_document(
+    claim_id: str,
     file: UploadFile = File(...),
-    claim_id: str = Form(...),
-    document_type: str = Form(...)
+    document_type: str = Form(...),
+    upload_notes: str = Form(None),
+    db: Session = Depends(get_db)
 ):
     """Subir documento relacionado con un siniestro"""
     try:
         # Validar tipo de archivo
-        if not file.content_type.startswith('image/') and not file.content_type.startswith('application/pdf'):
+        if not file.content_type or (not file.content_type.startswith('image/') and not file.content_type.startswith('application/pdf')):
             raise HTTPException(status_code=400, detail="Only images and PDF files are allowed")
         
-        # Subir a Google Cloud Storage
-        file_url = await storage_service.upload_file(
-            file.file,
-            f"claims/{claim_id}/{document_type}_{file.filename}"
+        # Buscar el claim
+        claim = db.query(ClaimForm).filter(ClaimForm.claim_id == claim_id).first()
+        if not claim:
+            raise HTTPException(status_code=404, detail="Claim not found")
+        
+        # Leer contenido del archivo
+        file_content = await file.read()
+        
+        # Validar que el archivo tenga nombre
+        if not file.filename:
+            raise HTTPException(status_code=400, detail="File must have a name")
+        
+        # Subir archivo a Google Cloud Storage
+        storage_url = storage_service.upload_file(
+            file_content,
+            file.filename,
+            claim_id,
+            "web-form",  # email_id para la estructura de carpetas
+            file.content_type
         )
         
-        return {
-            "message": "Document uploaded successfully",
-            "file_url": file_url,
-            "claim_id": claim_id,
-            "document_type": document_type
-        }
+        if not storage_url:
+            raise HTTPException(status_code=500, detail="Failed to upload file to storage")
         
+        # Generar ruta de storage
+        storage_path = f"documentos/{claim_id}/web-form/{file.filename}"
+        
+        # Crear registro en la base de datos
+        db_document = Document(
+            claim_form_id=claim.id,
+            filename=file.filename,
+            original_filename=file.filename,
+            file_type=file.content_type,
+            file_size=len(file_content),
+            document_type=document_type,
+            storage_url=storage_url,
+            storage_path=storage_path,
+            upload_notes=upload_notes
+        )
+        
+        db.add(db_document)
+        db.commit()
+        db.refresh(db_document)
+        
+        return APIResponse(
+            success=True,
+            message="Document uploaded successfully",
+            data={
+                "id": db_document.id,
+                "filename": db_document.filename,
+                "storage_url": db_document.storage_url,
+                "file_size": db_document.file_size
+            }
+        )
+        
+    except HTTPException:
+        raise
     except Exception as e:
+        db.rollback()
         raise HTTPException(status_code=500, detail=f"Error uploading document: {str(e)}")
 
-@app.get("/api/claims/{claim_id}")
-async def get_claim(claim_id: str):
+@app.get("/api/claims/{claim_id}", response_model=APIResponse)
+async def get_claim(claim_id: str, db: Session = Depends(get_db)):
     """Obtener detalles de un siniestro específico"""
     try:
-        # Aquí implementarías la lógica para obtener el siniestro de la base de datos
-        # Por ahora, retornamos un mock
-        return {
-            "id": claim_id,
-            "status": "pending",
-            "coverage_type": "Trip Cancellation",
-            "full_name": "John Doe",
-            "email": "john@example.com",
-            "created_at": "2024-01-01T00:00:00Z"
-        }
+        claim = db.query(ClaimForm).filter(ClaimForm.claim_id == claim_id).first()
+        if not claim:
+            raise HTTPException(status_code=404, detail="Claim not found")
         
+        # Obtener documentos relacionados
+        documents = db.query(Document).filter(Document.claim_form_id == claim.id).all()
+        
+        return APIResponse(
+            success=True,
+            message="Claim retrieved successfully",
+            data={
+                "claim": {
+                    "id": claim.id,
+                    "claim_id": claim.claim_id,
+                    "coverage_type": claim.coverage_type,
+                    "full_name": claim.full_name,
+                    "email": claim.email,
+                    "phone": claim.phone,
+                    "policy_number": claim.policy_number,
+                    "incident_date": claim.incident_date,
+                    "incident_location": claim.incident_location,
+                    "description": claim.description,
+                    "estimated_amount": claim.estimated_amount,
+                    "status": claim.status,
+                    "created_at": claim.created_at
+                },
+                "documents": [
+                    {
+                        "id": doc.id,
+                        "filename": doc.filename,
+                        "document_type": doc.document_type,
+                        "storage_url": doc.storage_url,
+                        "uploaded_at": doc.uploaded_at
+                    }
+                    for doc in documents
+                ]
+            }
+        )
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=404, detail=f"Claim not found: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error retrieving claim: {str(e)}")
 
-@app.get("/api/claims")
-async def list_claims(limit: int = 10, offset: int = 0):
+@app.get("/api/claims", response_model=APIResponse)
+async def list_claims(
+    limit: int = 10, 
+    offset: int = 0, 
+    db: Session = Depends(get_db)
+):
     """Listar siniestros (para el dashboard)"""
     try:
-        # Aquí implementarías la lógica para obtener siniestros de la base de datos
-        # Por ahora, retornamos datos mock
-        claims = [
-            {
-                "id": f"claim_{i}",
-                "status": "pending" if i % 3 == 0 else "approved" if i % 3 == 1 else "rejected",
-                "coverage_type": "Trip Cancellation",
-                "full_name": f"User {i}",
-                "email": f"user{i}@example.com",
-                "created_at": "2024-01-01T00:00:00Z"
-            }
-            for i in range(1, limit + 1)
-        ]
+        claims = db.query(ClaimForm).offset(offset).limit(limit).all()
+        total = db.query(ClaimForm).count()
         
-        return {
-            "claims": claims,
-            "total": 100,  # Mock total
-            "limit": limit,
-            "offset": offset
-        }
+        return APIResponse(
+            success=True,
+            message="Claims retrieved successfully",
+            data={
+                "claims": [
+                    {
+                        "id": claim.id,
+                        "claim_id": claim.claim_id,
+                        "coverage_type": claim.coverage_type,
+                        "full_name": claim.full_name,
+                        "email": claim.email,
+                        "status": claim.status,
+                        "created_at": claim.created_at
+                    }
+                    for claim in claims
+                ],
+                "total": total,
+                "limit": limit,
+                "offset": offset
+            }
+        )
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving claims: {str(e)}")
