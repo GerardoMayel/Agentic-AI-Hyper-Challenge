@@ -1,180 +1,21 @@
+"""
+Servicio para manejar el almacenamiento en Google Cloud Storage.
+"""
+
 import os
-import boto3
-from typing import Optional, BinaryIO
-from botocore.exceptions import ClientError
+import json
 import uuid
 from datetime import datetime
 from pathlib import Path
+from typing import Optional, BinaryIO
 from google.cloud import storage
 from google.auth.exceptions import DefaultCredentialsError
-from dotenv import load_dotenv
-import json
 from google.oauth2 import service_account
+from dotenv import load_dotenv
 
 load_dotenv()
 
 class StorageService:
-    """Servicio para almacenamiento de archivos usando Cloudflare R2 (compatible con S3)."""
-    
-    def __init__(self):
-        self.account_id = os.getenv("R2_ACCOUNT_ID")
-        self.access_key_id = os.getenv("R2_ACCESS_KEY_ID")
-        self.secret_access_key = os.getenv("R2_SECRET_ACCESS_KEY")
-        self.bucket_name = os.getenv("R2_BUCKET_NAME")
-        self.public_url = os.getenv("R2_PUBLIC_URL")
-        
-        # Configurar cliente S3 compatible con R2
-        if all([self.account_id, self.access_key_id, self.secret_access_key]):
-            self.s3_client = boto3.client(
-                's3',
-                endpoint_url=f'https://{self.account_id}.r2.cloudflarestorage.com',
-                aws_access_key_id=self.access_key_id,
-                aws_secret_access_key=self.secret_access_key
-            )
-        else:
-            self.s3_client = None
-            print("R2 no está configurado completamente.")
-    
-    def upload_file(
-        self,
-        file_path: str,
-        object_name: Optional[str] = None,
-        content_type: Optional[str] = None
-    ) -> Optional[str]:
-        """
-        Sube un archivo al almacenamiento R2.
-        
-        Args:
-            file_path: Ruta del archivo local
-            object_name: Nombre del objeto en R2 (opcional)
-            content_type: Tipo de contenido del archivo
-            
-        Returns:
-            str: URL pública del archivo si se subió correctamente, None en caso contrario
-        """
-        if not self.s3_client or not self.bucket_name:
-            print("R2 no está configurado. Archivo no subido.")
-            return None
-        
-        if object_name is None:
-            object_name = os.path.basename(file_path)
-        
-        try:
-            extra_args = {}
-            if content_type:
-                extra_args['ContentType'] = content_type
-            
-            self.s3_client.upload_file(
-                file_path,
-                self.bucket_name,
-                object_name,
-                ExtraArgs=extra_args
-            )
-            
-            # Construir URL pública
-            if self.public_url:
-                file_url = f"{self.public_url}/{object_name}"
-            else:
-                file_url = f"https://{self.bucket_name}.r2.cloudflarestorage.com/{object_name}"
-            
-            print(f"Archivo subido exitosamente: {file_url}")
-            return file_url
-            
-        except ClientError as e:
-            print(f"Error subiendo archivo: {str(e)}")
-            return None
-    
-    def upload_fileobj(
-        self,
-        file_obj: BinaryIO,
-        object_name: str,
-        content_type: Optional[str] = None
-    ) -> Optional[str]:
-        """
-        Sube un objeto de archivo al almacenamiento R2.
-        
-        Args:
-            file_obj: Objeto de archivo (BytesIO, etc.)
-            object_name: Nombre del objeto en R2
-            content_type: Tipo de contenido del archivo
-            
-        Returns:
-            str: URL pública del archivo si se subió correctamente, None en caso contrario
-        """
-        if not self.s3_client or not self.bucket_name:
-            print("R2 no está configurado. Archivo no subido.")
-            return None
-        
-        try:
-            extra_args = {}
-            if content_type:
-                extra_args['ContentType'] = content_type
-            
-            self.s3_client.upload_fileobj(
-                file_obj,
-                self.bucket_name,
-                object_name,
-                ExtraArgs=extra_args
-            )
-            
-            # Construir URL pública
-            if self.public_url:
-                file_url = f"{self.public_url}/{object_name}"
-            else:
-                file_url = f"https://{self.bucket_name}.r2.cloudflarestorage.com/{object_name}"
-            
-            print(f"Archivo subido exitosamente: {file_url}")
-            return file_url
-            
-        except ClientError as e:
-            print(f"Error subiendo archivo: {str(e)}")
-            return None
-    
-    def delete_file(self, object_name: str) -> bool:
-        """
-        Elimina un archivo del almacenamiento R2.
-        
-        Args:
-            object_name: Nombre del objeto a eliminar
-            
-        Returns:
-            bool: True si se eliminó correctamente, False en caso contrario
-        """
-        if not self.s3_client or not self.bucket_name:
-            print("R2 no está configurado. Archivo no eliminado.")
-            return False
-        
-        try:
-            self.s3_client.delete_object(
-                Bucket=self.bucket_name,
-                Key=object_name
-            )
-            print(f"Archivo eliminado exitosamente: {object_name}")
-            return True
-            
-        except ClientError as e:
-            print(f"Error eliminando archivo: {str(e)}")
-            return False
-    
-    def get_file_url(self, object_name: str) -> Optional[str]:
-        """
-        Obtiene la URL pública de un archivo.
-        
-        Args:
-            object_name: Nombre del objeto
-            
-        Returns:
-            str: URL pública del archivo, None si no está configurado
-        """
-        if not self.bucket_name:
-            return None
-        
-        if self.public_url:
-            return f"{self.public_url}/{object_name}"
-        else:
-            return f"https://{self.bucket_name}.r2.cloudflarestorage.com/{object_name}"
-
-class GoogleCloudStorageService:
     """Servicio para interactuar con Google Cloud Storage."""
     
     def __init__(self):
@@ -252,13 +93,16 @@ class GoogleCloudStorageService:
             if content_type:
                 blob.content_type = content_type
             
-            # Subir archivo
-            blob.upload_from_string(file_content)
+            # Subir archivo con el content_type correcto
+            if content_type:
+                blob.upload_from_string(
+                    file_content,
+                    content_type=content_type
+                )
+            else:
+                blob.upload_from_string(file_content)
             
-            # Hacer público el archivo
-            blob.make_public()
-            
-            # Generar URL pública
+            # Generar URL pública (sin hacer público el archivo)
             url = f"https://storage.googleapis.com/{self.bucket_name}/{blob_path}"
             
             print(f"✅ Archivo subido: {filename}")
@@ -271,12 +115,36 @@ class GoogleCloudStorageService:
             print(f"❌ Error subiendo archivo {filename}: {e}")
             return None
     
-    def download_file(self, blob_path: str) -> Optional[bytes]:
+    def _sanitize_filename(self, filename: str) -> str:
         """
-        Descarga un archivo de Google Cloud Storage.
+        Sanitiza el nombre del archivo para evitar problemas de compatibilidad.
         
         Args:
-            blob_path: Ruta del archivo en el bucket
+            filename: Nombre original del archivo
+            
+        Returns:
+            Nombre sanitizado
+        """
+        # Caracteres problemáticos
+        invalid_chars = '<>:"/\\|?*'
+        
+        # Reemplazar caracteres inválidos
+        for char in invalid_chars:
+            filename = filename.replace(char, '_')
+        
+        # Limitar longitud
+        if len(filename) > 200:
+            name, ext = os.path.splitext(filename)
+            filename = name[:200-len(ext)] + ext
+        
+        return filename
+    
+    def download_file(self, storage_path: str) -> Optional[bytes]:
+        """
+        Descarga un archivo desde Google Cloud Storage.
+        
+        Args:
+            storage_path: Ruta del archivo en el bucket (sin el bucket name)
             
         Returns:
             Contenido del archivo en bytes o None si hay error
@@ -286,19 +154,40 @@ class GoogleCloudStorageService:
             return None
         
         try:
-            blob = self.bucket.blob(blob_path)
+            # Obtener el blob
+            blob = self.bucket.blob(storage_path)
             
+            # Verificar si existe
             if not blob.exists():
-                print(f"❌ Archivo no encontrado: {blob_path}")
+                print(f"❌ Archivo no encontrado: {storage_path}")
                 return None
             
+            # Descargar contenido
             content = blob.download_as_bytes()
-            print(f"✅ Archivo descargado: {blob_path}")
+            
+            print(f"✅ Archivo descargado: {storage_path}")
+            print(f"   Tamaño: {len(content)} bytes")
+            
             return content
             
         except Exception as e:
-            print(f"❌ Error descargando archivo {blob_path}: {e}")
+            print(f"❌ Error descargando archivo {storage_path}: {e}")
             return None
+    
+    def get_file_url(self, storage_path: str) -> Optional[str]:
+        """
+        Genera la URL pública de un archivo.
+        
+        Args:
+            storage_path: Ruta del archivo en el bucket
+            
+        Returns:
+            URL pública del archivo
+        """
+        if not self.bucket or not self.bucket_name:
+            return None
+        
+        return f"https://storage.googleapis.com/{self.bucket_name}/{storage_path}"
     
     def delete_file(self, blob_path: str) -> bool:
         """
@@ -392,30 +281,6 @@ class GoogleCloudStorageService:
             print(f"❌ Error obteniendo información del archivo {blob_path}: {e}")
             return None
     
-    def _sanitize_filename(self, filename: str) -> str:
-        """
-        Sanitiza el nombre del archivo para evitar problemas de compatibilidad.
-        
-        Args:
-            filename: Nombre original del archivo
-            
-        Returns:
-            Nombre sanitizado
-        """
-        # Caracteres problemáticos
-        invalid_chars = '<>:"/\\|?*'
-        
-        # Reemplazar caracteres inválidos
-        for char in invalid_chars:
-            filename = filename.replace(char, '_')
-        
-        # Limitar longitud
-        if len(filename) > 200:
-            name, ext = os.path.splitext(filename)
-            filename = name[:200-len(ext)] + ext
-        
-        return filename
-    
     def create_folder_structure(self, numero_siniestro: str) -> bool:
         """
         Crea la estructura de carpetas para un siniestro.
@@ -444,6 +309,5 @@ class GoogleCloudStorageService:
             print(f"❌ Error creando estructura de carpetas: {e}")
             return False
 
-# Instancia global del servicio
-storage_service = StorageService()
-storage_service_gcs = GoogleCloudStorageService() 
+# Instancia global para uso en otros módulos
+gcs_storage = StorageService() 

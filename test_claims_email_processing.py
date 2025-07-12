@@ -16,14 +16,14 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 load_dotenv()
 
 from app.services.gmail_service import GmailService
-from app.services.storage_service import storage_service_gcs
+from app.services.storage_service import gcs_storage
 
 class TestClaimsProcessor:
     """Procesador de prueba para emails de claims."""
     
     def __init__(self):
         self.gmail_service = GmailService()
-        self.storage_service = storage_service_gcs
+        self.storage_service = gcs_storage
         
     def procesar_email_prueba(self):
         """Procesa el email de prueba con PDF."""

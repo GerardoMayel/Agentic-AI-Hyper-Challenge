@@ -17,7 +17,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 load_dotenv()
 
 from app.services.gmail_service import GmailService
-from app.services.storage_service import storage_service_gcs
+from app.services.storage_service import gcs_storage
 from app.services.claims_processor import claims_processor
 from app.core.database import get_db
 from app.core.models import EmailRecibido, DocumentoAdjunto, SiniestroReportado
@@ -27,7 +27,7 @@ class ClaimsEmailProcessor:
     
     def __init__(self):
         self.gmail_service = GmailService()
-        self.storage_service = storage_service_gcs
+        self.storage_service = gcs_storage
         self.claims_processor = claims_processor
         
     def procesar_emails_nuevos(self, max_emails: int = 10) -> Dict:
