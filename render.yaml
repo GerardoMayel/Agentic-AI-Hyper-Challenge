@@ -17,7 +17,7 @@ services:
       - key: GOOGLE_CLOUD_STORAGE_BUCKET
         value: claims-documents-zurich-ai
       - key: GOOGLE_APPLICATION_CREDENTIALS_JSON
-        sync: false
+        value: /etc/secrets/velvety-glyph-464401-v6-6a68dc3c142f.json
       - key: GOOGLE_CLOUD_PROJECT_ID
         value: velvety-glyph-464401-v6
       - key: GOOGLE_CLOUD_STORAGE_FOLDER
@@ -71,7 +71,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: NEXT_PUBLIC_API_URL
-        value: https://zurich-claims-api.onrender.com
+        value: https://agentic-ai-hyper-challenge-backend.onrender.com
 
 databases:
   - name: claims-db

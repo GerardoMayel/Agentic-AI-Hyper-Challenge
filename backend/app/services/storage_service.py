@@ -20,21 +20,41 @@ class StorageService:
         self.project_id = os.getenv("GOOGLE_CLOUD_PROJECT_ID")
         self.bucket_name = os.getenv("GOOGLE_CLOUD_STORAGE_BUCKET")
         self.folder = os.getenv("GOOGLE_CLOUD_STORAGE_FOLDER", "documents")
+        self.client = None
+        self.bucket = None
         
-        # Initialize Google Cloud Storage client
+        # Initialize Google Cloud Storage client (optional)
         try:
-            # Check if credentials are provided as JSON string
-            credentials_json = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON")
-            if credentials_json:
-                credentials_info = json.loads(credentials_json)
-                self.client = storage.Client.from_service_account_info(credentials_info)
+            # Check if credentials are provided as JSON string or file path
+            credentials_value = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON")
+            
+            if credentials_value:
+                # Check if it's a valid JSON string
+                try:
+                    credentials_info = json.loads(credentials_value)
+                    self.client = storage.Client.from_service_account_info(credentials_info)
+                    print("✅ Google Cloud Storage initialized with service account credentials (JSON)")
+                except json.JSONDecodeError:
+                    # If not JSON, treat as file path
+                    if os.path.exists(credentials_value):
+                        self.client = storage.Client.from_service_account_json(credentials_value)
+                        print(f"✅ Google Cloud Storage initialized with service account credentials (file: {credentials_value})")
+                    else:
+                        print(f"⚠️  Credentials file not found: {credentials_value}")
+                        raise Exception(f"Credentials file not found: {credentials_value}")
             else:
-                # Try to use default credentials
-                self.client = storage.Client(project=self.project_id)
+                # Try to use default credentials (only works in development)
+                print("⚠️  No GOOGLE_APPLICATION_CREDENTIALS_JSON found")
+                print("📝 Please configure service account credentials in production")
+                raise Exception("Service account credentials required")
             
             self.bucket = self.client.bucket(self.bucket_name)
+            print("✅ Google Cloud Storage bucket connected successfully")
         except Exception as e:
-            raise Exception(f"Failed to initialize Google Cloud Storage: {str(e)}")
+            print(f"⚠️  Google Cloud Storage not available: {str(e)}")
+            print("📝 File upload functionality will be disabled")
+            self.client = None
+            self.bucket = None
     
     def generate_file_path(self, claim_id: str, document_type: str, original_filename: str) -> str:
         """Generate a unique file path for storage"""
@@ -63,6 +83,9 @@ class StorageService:
                 "file_size": int
             }
         """
+        if not self.client or not self.bucket:
+            raise Exception("Google Cloud Storage is not configured. Please set GOOGLE_APPLICATION_CREDENTIALS_JSON environment variable.")
+        
         try:
             # Generate storage path
             storage_path = self.generate_file_path(claim_id, document_type, original_filename)
@@ -97,6 +120,9 @@ class StorageService:
     
     def delete_file(self, storage_path: str) -> bool:
         """Delete a file from Google Cloud Storage"""
+        if not self.client or not self.bucket:
+            raise Exception("Google Cloud Storage is not configured. Please set GOOGLE_APPLICATION_CREDENTIALS_JSON environment variable.")
+        
         try:
             blob = self.bucket.blob(storage_path)
             blob.delete()
@@ -106,6 +132,9 @@ class StorageService:
     
     def get_file_url(self, storage_path: str, signed: bool = False, expiration: int = 3600) -> str:
         """Get file URL (public or signed)"""
+        if not self.client or not self.bucket:
+            raise Exception("Google Cloud Storage is not configured. Please set GOOGLE_APPLICATION_CREDENTIALS_JSON environment variable.")
+        
         try:
             blob = self.bucket.blob(storage_path)
             
@@ -141,6 +170,9 @@ class StorageService:
     
     def list_files_by_claim(self, claim_id: str) -> list:
         """List all files for a specific claim"""
+        if not self.client or not self.bucket:
+            raise Exception("Google Cloud Storage is not configured. Please set GOOGLE_APPLICATION_CREDENTIALS_JSON environment variable.")
+        
         try:
             prefix = f"{self.folder}/{claim_id}/"
             blobs = self.client.list_blobs(self.bucket_name, prefix=prefix)
