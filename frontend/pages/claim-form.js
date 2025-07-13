@@ -536,7 +536,7 @@ export default function ClaimForm() {
         email: formData.email,
         phone: formData.mobilePhone,
         policy_number: formData.policyNumber,
-        incident_date: formData.lossDate ? new Date(formData.lossDate).isoformat() : null,
+        incident_date: formData.lossDate ? new Date(formData.lossDate).toISOString() : null,
         incident_location: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`,
         description: formData.incidentDescription,
         estimated_amount: totalAmount
