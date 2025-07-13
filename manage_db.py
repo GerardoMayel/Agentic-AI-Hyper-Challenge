@@ -11,23 +11,23 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def show_help():
-    """Muestra la ayuda del script."""
+    """Show script help."""
     print("""
-🔧 Gestor de Base de Datos - Sistema de Siniestros
+🔧 Database Manager - Claims System
 
-Uso: python manage_db.py [comando]
+Usage: python manage_db.py [command]
 
-Comandos disponibles:
-  init      - Inicializar la base de datos con tablas y datos de ejemplo
-  reset     - Resetear la base de datos (¡CUIDADO! Elimina todos los datos)
-  test      - Probar la conexión a la base de datos
-  migrate   - Ejecutar migraciones de Alembic
-  create-migration - Crear una nueva migración
-  test-claim - Crear un siniestro de prueba
-  stats     - Mostrar estadísticas de la base de datos
-  help      - Mostrar esta ayuda
+Available commands:
+  init      - Initialize database with tables and sample data
+  reset     - Reset database (WARNING! Deletes all data)
+  test      - Test database connection
+  migrate   - Run Alembic migrations
+  create-migration - Create a new migration
+  test-claim - Create a test claim
+  stats     - Show database statistics
+  help      - Show this help
 
-Ejemplos:
+Examples:
   python manage_db.py init
   python manage_db.py test
   python manage_db.py migrate
@@ -36,17 +36,17 @@ Ejemplos:
 """)
 
 def test_connection():
-    """Prueba la conexión a la base de datos."""
+    """Test database connection."""
     try:
         from app.core.database import test_connection
         if test_connection():
-            print("✅ Conexión a la base de datos exitosa")
+            print("✅ Database connection successful")
             return True
         else:
-            print("❌ Error: No se pudo conectar a la base de datos")
+            print("❌ Error: Could not connect to database")
             return False
     except Exception as e:
-        print(f"❌ Error probando conexión: {e}")
+        print(f"❌ Error testing connection: {e}")
         return False
 
 def run_migrations():
