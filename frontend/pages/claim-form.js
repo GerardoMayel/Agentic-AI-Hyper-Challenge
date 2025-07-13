@@ -587,7 +587,7 @@ export default function ClaimForm() {
         formData.append('document_type', `DOCUMENT_${i + 1}`)
         formData.append('upload_notes', `Uploaded via web form - ${file.name}`)
 
-        const documentResponse = await fetch(`http://localhost:8000/api/claims/${claimId}/documents`, {
+        const documentResponse = await fetch(`https://agentic-ai-hyper-challenge-backend.onrender.com/api/claims/${claimId}/documents`, {
           method: 'POST',
           body: formData
         })
