@@ -158,3 +158,4 @@ cython_debug/
 
 # Local development
 *.local
+backend/gmail_token_new.json
