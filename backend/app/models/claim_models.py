@@ -37,6 +37,14 @@ class ClaimForm(Base):
     status = Column(String(50), default="PENDING")
     is_active = Column(Boolean, default=True)
     
+    # Customer information
+    customer_email = Column(String(200), nullable=True)
+    
+    # Analysis fields
+    sentiment_analysis = Column(String(50), nullable=True)  # positive, negative, neutral
+    risk_score = Column(Float, nullable=True)  # 0.0 to 1.0
+    priority_level = Column(String(50), nullable=True)  # low, medium, high, urgent
+    
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

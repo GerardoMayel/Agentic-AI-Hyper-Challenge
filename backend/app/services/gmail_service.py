@@ -18,7 +18,7 @@ class GmailService:
     def __init__(self):
         self.creds = None
         self.service = None
-        self.setup_gmail_service()
+        # Don't setup immediately - do lazy loading
     
     def setup_gmail_service(self):
         """Setup Gmail API service"""
@@ -26,7 +26,8 @@ class GmailService:
             # Load token from environment variable
             token_json = os.getenv("GMAIL_TOKEN_JSON")
             if not token_json:
-                raise ValueError("GMAIL_TOKEN_JSON environment variable is required")
+                print("⚠️  GMAIL_TOKEN_JSON environment variable not found - Gmail service disabled")
+                return
             
             # Parse token
             token_data = json.loads(token_json)
@@ -51,14 +52,17 @@ class GmailService:
             
             self.creds = creds
             self.service = build('gmail', 'v1', credentials=creds)
+            print("✅ Gmail service initialized successfully")
             
         except Exception as e:
             print(f"❌ Error setting up Gmail service: {e}")
-            raise
+            # Don't raise - just log the error and continue without Gmail
     
     def get_recent_emails(self, max_results: int = 20) -> List[Dict]:
         """Get recent emails from Gmail"""
         try:
+            if not self.service:
+                self.setup_gmail_service()
             if not self.service:
                 return []
             
@@ -85,6 +89,8 @@ class GmailService:
     def get_email_details(self, message_id: str) -> Optional[Dict]:
         """Get detailed email information"""
         try:
+            if not self.service:
+                self.setup_gmail_service()
             if not self.service:
                 return None
             
@@ -188,6 +194,8 @@ class GmailService:
     def send_email(self, to_email: str, subject: str, body: str) -> bool:
         """Send email via Gmail"""
         try:
+            if not self.service:
+                self.setup_gmail_service()
             if not self.service:
                 print("❌ Gmail service not initialized")
                 return False

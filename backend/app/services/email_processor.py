@@ -203,7 +203,10 @@ class EmailProcessor:
                 incident_description=claim_data.get('incident_description'),
                 estimated_amount=claim_data.get('estimated_amount'),
                 status='PENDING',
-                priority=claim_data.get('priority', 'NORMAL')
+                priority=claim_data.get('priority', 'NORMAL'),
+                sentiment_analysis=claim_data.get('sentiment_analysis', 'NEUTRAL'),
+                risk_score=claim_data.get('risk_score', 0.5),
+                priority_level=claim_data.get('priority', 'NORMAL').lower()
             )
             
             self.db.add(claim_submission)
@@ -235,6 +238,8 @@ class EmailProcessor:
             - incident_description: Description of what happened
             - estimated_amount: Estimated claim amount (number only)
             - priority: LOW, NORMAL, HIGH, or URGENT based on content
+            - sentiment_analysis: POSITIVE, NEGATIVE, or NEUTRAL based on customer tone
+            - risk_score: Number between 0.0 and 1.0 indicating claim risk (0=low risk, 1=high risk)
             
             Return ONLY valid JSON, no additional text.
             """
