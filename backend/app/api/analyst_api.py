@@ -2,11 +2,12 @@
 API endpoints para la interfaz de analistas
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Form
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List, Optional
 from datetime import datetime, timedelta
+from pydantic import BaseModel
 
 from app.core.database import get_db
 from app.models.email_models import Email, ClaimSubmission, DocumentAgentOCR, ClaimStatusUpdate, DashboardStats
@@ -477,4 +478,64 @@ def analyze_claim_with_llm(claim_id: int, db: Session = Depends(get_db)):
         
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error analyzing claim: {str(e)}") 
+        raise HTTPException(status_code=500, detail=f"Error analyzing claim: {str(e)}")
+
+@router.post("/auth/login")
+def login(email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+    """Authenticate analyst with credentials from database"""
+    try:
+        # Query credentials from database
+        from sqlalchemy import text
+        result = db.execute(
+            text("SELECT email, password_hash, role FROM auth_credentials WHERE email = :email AND is_active = true"),
+            {"email": email}
+        ).fetchone()
+        
+        if not result:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+        stored_email, stored_password, role = result
+        
+        # Simple password comparison (in production, use proper hashing)
+        if password == stored_password:
+            return {
+                "success": True,
+                "user": {
+                    "email": stored_email,
+                    "role": role
+                },
+                "message": "Authentication successful"
+            }
+        else:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Authentication error: {str(e)}")
+
+@router.get("/auth/credentials")
+def get_demo_credentials(db: Session = Depends(get_db)):
+    """Get demo credentials for display (without password)"""
+    try:
+        from sqlalchemy import text
+        result = db.execute(
+            text("SELECT email, role FROM auth_credentials WHERE is_active = true LIMIT 1"),
+        ).fetchone()
+        
+        if result:
+            return {
+                "demo_email": result[0],
+                "demo_password": "ZurichDemo2024!"  # Hardcoded for demo display
+            }
+        else:
+            return {
+                "demo_email": "analyst@zurich-demo.com",
+                "demo_password": "ZurichDemo2024!"
+            }
+            
+    except Exception as e:
+        return {
+            "demo_email": "analyst@zurich-demo.com",
+            "demo_password": "ZurichDemo2024!"
+        } 

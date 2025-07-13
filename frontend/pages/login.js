@@ -1,8 +1,9 @@
 import Head from 'next/head'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
-import { AUTH_CONFIG } from '../config/auth'
+// Backend API URL
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'
 
 export default function Login() {
   const router = useRouter()
@@ -12,24 +13,63 @@ export default function Login() {
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [demoCredentials, setDemoCredentials] = useState({
+    demo_email: 'analyst@zurich-demo.com',
+    demo_password: 'ZurichDemo2024!'
+  })
+
+  // Get demo credentials from API
+  useEffect(() => {
+    const fetchDemoCredentials = async () => {
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/analyst/auth/credentials`)
+        if (response.ok) {
+          const data = await response.json()
+          setDemoCredentials(data)
+        }
+      } catch (error) {
+        console.error('Error fetching demo credentials:', error)
+        // Keep default credentials if API fails
+      }
+    }
+
+    fetchDemoCredentials()
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
     setError('')
 
-    // Simular delay de autenticación
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    try {
+      // Create form data for the API
+      const formDataToSend = new FormData()
+      formDataToSend.append('email', formData.email)
+      formDataToSend.append('password', formData.password)
 
-    if (formData.email === AUTH_CONFIG.demoCredentials.email && formData.password === AUTH_CONFIG.demoCredentials.password) {
-      // Guardar estado de autenticación en localStorage
-      localStorage.setItem('isAuthenticated', 'true')
-      localStorage.setItem('userEmail', formData.email)
-      
-      // Redirigir al dashboard
-      router.push('/dashboard')
-    } else {
-      setError('Invalid email or password. Please try again.')
+      const response = await fetch(`${BACKEND_URL}/api/analyst/auth/login`, {
+        method: 'POST',
+        body: formDataToSend
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        
+        // Guardar estado de autenticación en localStorage
+        localStorage.setItem('isAuthenticated', 'true')
+        localStorage.setItem('userEmail', result.user.email)
+        localStorage.setItem('userRole', result.user.role)
+        
+        // Redirigir al dashboard
+        router.push('/dashboard')
+      } else {
+        const errorData = await response.json()
+        setError(errorData.detail || 'Invalid email or password. Please try again.')
+      }
+    } catch (error) {
+      console.error('Login error:', error)
+      setError('Connection error. Please try again.')
+    } finally {
       setLoading(false)
     }
   }
@@ -75,8 +115,8 @@ export default function Login() {
             {/* Demo Credentials */}
             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-blue-800 text-sm font-medium mb-2">Demo Credentials:</p>
-              <p className="text-blue-700 text-xs">Email: {AUTH_CONFIG.demoCredentials.email}</p>
-              <p className="text-blue-700 text-xs">Password: {AUTH_CONFIG.demoCredentials.password}</p>
+              <p className="text-blue-700 text-xs">Email: {demoCredentials.demo_email}</p>
+              <p className="text-blue-700 text-xs">Password: {demoCredentials.demo_password}</p>
             </div>
             
             <form onSubmit={handleSubmit}>
