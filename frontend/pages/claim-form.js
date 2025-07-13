@@ -531,21 +531,31 @@ export default function ClaimForm() {
     try {
       // Preparar datos del claim para el backend
       const claimData = {
-        coverage_type: formData.claimType,
-        full_name: formData.fullName,
+        claimType: formData.claimType,
+        fullName: formData.fullName,
         email: formData.email,
-        phone: formData.mobilePhone,
-        policy_number: formData.policyNumber,
-        incident_date: formData.lossDate ? new Date(formData.lossDate).toISOString() : null,
-        incident_location: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`,
-        description: formData.incidentDescription,
-        estimated_amount: totalAmount
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zipCode: formData.zipCode,
+        mobilePhone: formData.mobilePhone,
+        otherPhone: formData.otherPhone,
+        allClaimants: formData.allClaimants,
+        policyNumber: formData.policyNumber,
+        insuranceAgency: formData.insuranceAgency,
+        initialDepositDate: formData.initialDepositDate,
+        incidentDescription: formData.incidentDescription,
+        lossDate: formData.lossDate,
+        authorization: formData.authorization,
+        signature: formData.signature,
+        signatureDate: formData.signatureDate,
+        expenses: expenses
       }
 
       // 1. Crear el claim en el backend
       console.log('Sending claim data to backend:', claimData)
       
-      const claimResponse = await fetch('http://localhost:8000/api/claims', {
+      const claimResponse = await fetch('https://agentic-ai-hyper-challenge-backend.onrender.com/api/claims/frontend', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
