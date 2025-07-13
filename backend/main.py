@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 import os
+from datetime import datetime
 from dotenv import load_dotenv
 
 # Cargar variables de entorno
@@ -20,7 +21,8 @@ from app.models.schemas import (
     ClaimFormResponse, 
     DocumentCreate, 
     DocumentResponse,
-    APIResponse
+    APIResponse,
+    FrontendClaimForm
 )
 from app.services.storage_service import StorageService
 
@@ -113,6 +115,51 @@ async def create_claim(
     except Exception as e:
         db.rollback()
         print(f"Error creating claim: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error creating claim: {str(e)}")
+
+@app.post("/api/claims/frontend", response_model=APIResponse)
+async def create_claim_from_frontend(
+    claim_data: FrontendClaimForm,
+    db: Session = Depends(get_db)
+):
+    """Crear un nuevo siniestro desde el formulario del frontend"""
+    try:
+        print(f"Received frontend claim data: {claim_data.dict()}")
+        
+        # Preparar datos para la base de datos
+        db_claim_data = {
+            "coverage_type": claim_data.claimType,
+            "full_name": claim_data.fullName,
+            "email": claim_data.email,
+            "phone": claim_data.mobilePhone,
+            "policy_number": claim_data.policyNumber,
+            "incident_date": datetime.fromisoformat(claim_data.lossDate) if claim_data.lossDate else None,
+            "incident_location": f"{claim_data.address}, {claim_data.city}, {claim_data.state} {claim_data.zipCode}",
+            "description": claim_data.incidentDescription,
+            "estimated_amount": sum(expense.get('amount', 0) for expense in claim_data.expenses) if claim_data.expenses else 0
+        }
+        
+        # Crear nuevo claim en la base de datos
+        db_claim = ClaimForm(**db_claim_data)
+        db.add(db_claim)
+        db.commit()
+        db.refresh(db_claim)
+        
+        print(f"Frontend claim created successfully: {db_claim.claim_id}")
+        
+        return APIResponse(
+            success=True,
+            message="Claim created successfully from frontend",
+            data={
+                "id": db_claim.id,
+                "claim_id": db_claim.claim_id,
+                "status": db_claim.status
+            }
+        )
+        
+    except Exception as e:
+        db.rollback()
+        print(f"Error creating frontend claim: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error creating claim: {str(e)}")
 
 @app.post("/api/claims/{claim_id}/documents", response_model=APIResponse)

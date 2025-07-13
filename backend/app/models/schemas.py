@@ -21,6 +21,37 @@ class ClaimFormBase(BaseModel):
 class ClaimFormCreate(ClaimFormBase):
     pass
 
+# Extended schemas for frontend form
+class FrontendClaimForm(BaseModel):
+    # Claim type
+    claimType: str
+    
+    # Claimant information
+    fullName: str
+    email: str
+    address: str
+    city: str
+    state: str
+    zipCode: str
+    mobilePhone: str
+    otherPhone: Optional[str] = None
+    allClaimants: str
+    policyNumber: str
+    insuranceAgency: str
+    initialDepositDate: str
+    
+    # Incident details
+    incidentDescription: str
+    lossDate: str
+    
+    # Authorization
+    authorization: bool
+    signature: str
+    signatureDate: str
+    
+    # Expenses (will be stored as JSON in description field)
+    expenses: Optional[List[dict]] = None
+
 class ClaimFormResponse(ClaimFormBase):
     id: int
     claim_id: str
