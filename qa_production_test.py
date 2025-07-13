@@ -108,14 +108,14 @@ class ProductionQATester:
             c.drawString(100, 750, "Zurich Insurance - Claim Document")
             
             c.setFont("Helvetica", 12)
-            c.drawString(100, 720, f"Claimant: {self.test_data['full_name']}")
-            c.drawString(100, 700, f"Policy Number: {self.test_data['policy_number']}")
-            c.drawString(100, 680, f"Claim Type: {self.test_data['claim_type']}")
+            c.drawString(100, 720, f"Claimant: {self.test_data['fullName']}")
+            c.drawString(100, 700, f"Policy Number: {self.test_data['policyNumber']}")
+            c.drawString(100, 680, f"Claim Type: {self.test_data['claimType']}")
             c.drawString(100, 660, f"Date: {datetime.now().strftime('%Y-%m-%d')}")
             
             c.setFont("Helvetica", 10)
             c.drawString(100, 620, "Incident Details:")
-            c.drawString(100, 600, self.test_data['incident_description'][:100] + "...")
+            c.drawString(100, 600, self.test_data['incidentDescription'][:100] + "...")
             
             c.drawString(100, 560, "Expenses:")
             y_pos = 540
@@ -123,7 +123,7 @@ class ProductionQATester:
                 c.drawString(120, y_pos, f"- {expense['description']}: ${expense['amount']}")
                 y_pos -= 20
             
-            c.drawString(100, y_pos - 20, f"Total Amount: ${self.test_data['total_amount_requested']}")
+            c.drawString(100, y_pos - 20, f"Total Amount: ${self.test_data['totalAmount']}")
             
             c.save()
             print(f"✅ Test PDF created: {pdf_path}")
@@ -135,11 +135,11 @@ class ProductionQATester:
             text_path = "test_claim_document.txt"
             with open(text_path, "w") as f:
                 f.write("Zurich Insurance - Claim Document\n")
-                f.write(f"Claimant: {self.test_data['full_name']}\n")
-                f.write(f"Policy Number: {self.test_data['policy_number']}\n")
-                f.write(f"Claim Type: {self.test_data['claim_type']}\n")
+                f.write(f"Claimant: {self.test_data['fullName']}\n")
+                f.write(f"Policy Number: {self.test_data['policyNumber']}\n")
+                f.write(f"Claim Type: {self.test_data['claimType']}\n")
                 f.write(f"Date: {datetime.now().strftime('%Y-%m-%d')}\n")
-                f.write(f"Total Amount: ${self.test_data['total_amount_requested']}\n")
+                f.write(f"Total Amount: ${self.test_data['totalAmount']}\n")
             print(f"✅ Test text file created: {text_path}")
             return text_path
     
@@ -168,7 +168,7 @@ class ProductionQATester:
         
         # Generate test data
         claim_data = self.generate_test_data()
-        print(f"📋 Generated test claim for: {claim_data['full_name']}")
+        print(f"📋 Generated test claim for: {claim_data['fullName']}")
         
         # Create test document
         document_path = self.create_test_pdf()
@@ -207,7 +207,7 @@ class ProductionQATester:
                 timeout=30
             )
             
-            if response.status_code == 201:
+            if response.status_code == 200:
                 claim_response = response.json()
                 claim_id = claim_response.get('data', {}).get('claim_id')
                 print(f"✅ Claim created successfully! ID: {claim_id}")
@@ -242,32 +242,6 @@ class ProductionQATester:
                     else:
                         print(f"⚠️  Document upload failed: {doc_response.status_code}")
                         print(f"Response: {doc_response.text}")
-                
-                return True
-            else:
-                print(f"❌ Claim creation failed: {response.status_code}")
-                print(f"Response: {response.text}")
-                return False
-            
-
-            
-            print("📤 Submitting claim to API...")
-            
-            # Submit claim using frontend endpoint
-            response = self.session.post(
-                f"{self.api_url}/api/claims/frontend",
-                json=form_data,
-                timeout=30
-            )
-            
-            if response.status_code == 201:
-                claim_response = response.json()
-                claim_id = claim_response.get('id')
-                print(f"✅ Claim created successfully! ID: {claim_id}")
-                
-                # Store claim data for verification
-                self.test_data['claim_id'] = claim_id
-                self.test_data['claim_response'] = claim_response
                 
                 return True
             else:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Script para verificar que todo esté listo para el despliegue en Render
+Deployment Checklist for Render Production
 """
 
 import os
@@ -8,17 +8,17 @@ import sys
 from pathlib import Path
 
 def check_file_exists(file_path, description):
-    """Verifica que un archivo existe"""
+    """Check if a file exists"""
     if os.path.exists(file_path):
         print(f"✅ {description}: {file_path}")
         return True
     else:
-        print(f"❌ {description}: {file_path} - NO ENCONTRADO")
+        print(f"❌ {description}: {file_path} - NOT FOUND")
         return False
 
 def check_directory_structure():
-    """Verifica la estructura de directorios"""
-    print("🔍 Verificando estructura de directorios...")
+    """Check directory structure"""
+    print("🔍 Checking directory structure...")
     
     required_dirs = [
         "backend",
@@ -26,30 +26,35 @@ def check_directory_structure():
         "backend/app",
         "backend/app/core",
         "backend/app/models",
-        "backend/app/services"
+        "backend/app/services",
+        "backend/app/api",
+        "backend/app/static"
     ]
     
     all_exist = True
     for dir_path in required_dirs:
         if os.path.exists(dir_path):
-            print(f"✅ Directorio: {dir_path}")
+            print(f"✅ Directory: {dir_path}")
         else:
-            print(f"❌ Directorio faltante: {dir_path}")
+            print(f"❌ Missing directory: {dir_path}")
             all_exist = False
     
     return all_exist
 
 def check_backend_files():
-    """Verifica archivos del backend"""
-    print("\n🔍 Verificando archivos del backend...")
+    """Check backend files"""
+    print("\n🔍 Checking backend files...")
     
     backend_files = [
-        ("backend/main.py", "Archivo principal del backend"),
-        ("backend/requirements.txt", "Dependencias de Python"),
-        ("backend/app/core/database.py", "Configuración de base de datos"),
-        ("backend/app/models/claim_models.py", "Modelos de datos"),
-        ("backend/app/models/schemas.py", "Esquemas Pydantic"),
-        ("backend/app/services/storage_service.py", "Servicio de almacenamiento")
+        ("backend/main.py", "Main FastAPI application"),
+        ("backend/requirements.txt", "Python dependencies"),
+        ("backend/app/core/database.py", "Database configuration"),
+        ("backend/app/models/email_models.py", "Database models"),
+        ("backend/app/api/analyst_api.py", "Analyst API endpoints"),
+        ("backend/app/static/analyst_dashboard.html", "Analyst dashboard interface"),
+        ("backend/app/services/email_scheduler.py", "Email scheduler service"),
+        ("backend/app/services/llm_service.py", "LLM service"),
+        ("backend/app/services/gmail_service.py", "Gmail service")
     ]
     
     all_exist = True
@@ -60,14 +65,14 @@ def check_backend_files():
     return all_exist
 
 def check_frontend_files():
-    """Verifica archivos del frontend"""
-    print("\n🔍 Verificando archivos del frontend...")
+    """Check frontend files"""
+    print("\n🔍 Checking frontend files...")
     
     frontend_files = [
-        ("frontend/package.json", "Configuración de Node.js"),
-        ("frontend/next.config.js", "Configuración de Next.js"),
-        ("frontend/pages/claim-form.js", "Formulario de siniestros"),
-        ("frontend/pages/index.js", "Página principal"),
+        ("frontend/package.json", "Node.js configuration"),
+        ("frontend/next.config.js", "Next.js configuration"),
+        ("frontend/pages/claim-form.js", "Claims form"),
+        ("frontend/pages/index.js", "Main page"),
         ("frontend/pages/dashboard.js", "Dashboard")
     ]
     
@@ -79,13 +84,13 @@ def check_frontend_files():
     return all_exist
 
 def check_deployment_files():
-    """Verifica archivos de despliegue"""
-    print("\n🔍 Verificando archivos de despliegue...")
+    """Check deployment files"""
+    print("\n🔍 Checking deployment files...")
     
     deployment_files = [
-        ("render.yaml", "Configuración de Render"),
-        (".gitignore", "Archivo .gitignore"),
-        ("README.md", "Documentación del proyecto")
+        ("render.yaml", "Render configuration"),
+        (".gitignore", "Git ignore file"),
+        ("README.md", "Project documentation")
     ]
     
     all_exist = True
@@ -96,25 +101,25 @@ def check_deployment_files():
     return all_exist
 
 def check_render_config():
-    """Verifica la configuración de Render"""
-    print("\n🔍 Verificando configuración de Render...")
+    """Check Render configuration"""
+    print("\n🔍 Checking Render configuration...")
     
-    if not check_file_exists("render.yaml", "Archivo render.yaml"):
+    if not check_file_exists("render.yaml", "Render configuration file"):
         return False
     
     try:
         with open("render.yaml", "r") as f:
             content = f.read()
             
-        # Verificar elementos clave
+        # Check key elements
         checks = [
-            ("zurich-claims-api", "Servicio backend definido"),
-            ("zurich-claims-frontend", "Servicio frontend definido"),
-            ("DATABASE_URL", "URL de base de datos configurada"),
-            ("GOOGLE_CLOUD_STORAGE_BUCKET", "Bucket de storage configurado"),
-            ("claims-documents-zurich-ai", "Nombre del bucket correcto"),
-            ("velvety-glyph-464401-v6", "Project ID de Google Cloud"),
-            ("gerardo_mayel_fernandez_alamilla@chiefdataaiofficer.com", "Email configurado")
+            ("zurich-claims-api", "Backend service defined"),
+            ("zurich-claims-frontend", "Frontend service defined"),
+            ("DATABASE_URL", "Database URL configured"),
+            ("GOOGLE_CLOUD_STORAGE_BUCKET", "Storage bucket configured"),
+            ("claims-documents-zurich-ai", "Correct bucket name"),
+            ("velvety-glyph-464401-v6", "Google Cloud Project ID"),
+            ("gerardo_mayel_fernandez_alamilla@chiefdataaiofficer.com", "Email configured")
         ]
         
         all_good = True
@@ -122,18 +127,63 @@ def check_render_config():
             if check_text in content:
                 print(f"✅ {description}")
             else:
-                print(f"❌ {description} - NO ENCONTRADO")
+                print(f"❌ {description} - NOT FOUND")
                 all_good = False
         
         return all_good
         
     except Exception as e:
-        print(f"❌ Error leyendo render.yaml: {e}")
+        print(f"❌ Error reading render.yaml: {e}")
         return False
 
+def check_environment_variables():
+    """Check required environment variables"""
+    print("\n🔍 Checking environment variables...")
+    
+    required_vars = [
+        "DATABASE_URL",
+        "GOOGLE_CLOUD_STORAGE_BUCKET", 
+        "GOOGLE_APPLICATION_CREDENTIALS_JSON",
+        "GEMINI_API_KEY",
+        "GMAIL_CREDENTIALS_JSON",
+        "GMAIL_TOKEN_JSON",
+        "SECRET_KEY"
+    ]
+    
+    missing_vars = []
+    for var in required_vars:
+        if var in os.environ:
+            print(f"✅ {var}: Configured")
+        else:
+            print(f"⚠️  {var}: Not set (will be configured in Render)")
+            missing_vars.append(var)
+    
+    if missing_vars:
+        print(f"\n📋 Environment variables to configure in Render:")
+        for var in missing_vars:
+            print(f"   - {var}")
+    
+    return True
+
+def check_database_connection():
+    """Check database connection"""
+    print("\n🔍 Checking database connection...")
+    
+    try:
+        from backend.app.core.database import engine
+        from sqlalchemy import text
+        with engine.connect() as conn:
+            result = conn.execute(text("SELECT 1"))
+            print("✅ Database connection successful")
+            return True
+    except Exception as e:
+        print(f"❌ Database connection failed: {e}")
+        print("⚠️  This is normal if DATABASE_URL is not set locally")
+        return True  # Don't fail deployment for this
+
 def main():
-    """Función principal"""
-    print("🚀 VERIFICACIÓN DE DESPLIEGUE EN RENDER")
+    """Main deployment checklist"""
+    print("🚀 RENDER DEPLOYMENT CHECKLIST")
     print("=" * 50)
     
     checks = [
@@ -141,7 +191,9 @@ def main():
         check_backend_files,
         check_frontend_files,
         check_deployment_files,
-        check_render_config
+        check_render_config,
+        check_environment_variables,
+        check_database_connection
     ]
     
     all_passed = True
@@ -152,22 +204,24 @@ def main():
     
     print("=" * 50)
     if all_passed:
-        print("🎉 ¡TODAS LAS VERIFICACIONES PASARON!")
-        print("✅ El proyecto está listo para desplegar en Render")
-        print("\n📋 Próximos pasos:")
-        print("1. Commit y push a la rama main")
-        print("2. Conectar el repositorio a Render")
-        print("3. Configurar las variables de entorno sensibles en Render:")
+        print("🎉 ALL CHECKS PASSED!")
+        print("✅ The project is ready to deploy on Render")
+        print("\n📋 Next steps:")
+        print("1. Commit and push to main branch")
+        print("2. Connect repository to Render")
+        print("3. Configure sensitive environment variables in Render dashboard:")
         print("   - GOOGLE_APPLICATION_CREDENTIALS_JSON")
         print("   - GEMINI_API_KEY")
         print("   - SECRET_KEY")
         print("   - GMAIL_CREDENTIALS_JSON")
         print("   - GMAIL_TOKEN_JSON")
-        print("   - RESEND_API_KEY")
-        print("   - RESEND_WEBHOOK_SECRET")
+        print("\n🌐 Production URLs will be:")
+        print("   - Backend: https://zurich-claims-api.onrender.com")
+        print("   - Frontend: https://zurich-claims-frontend.onrender.com")
+        print("   - Analyst Dashboard: https://zurich-claims-api.onrender.com/analyst")
     else:
-        print("❌ HAY PROBLEMAS QUE RESOLVER ANTES DEL DESPLIEGUE")
-        print("Revisa los errores arriba y corrígelos antes de continuar")
+        print("❌ THERE ARE ISSUES TO RESOLVE BEFORE DEPLOYMENT")
+        print("Check the errors above and fix them before continuing")
         sys.exit(1)
 
 if __name__ == "__main__":

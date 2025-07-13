@@ -16,28 +16,14 @@ services:
       # Google Cloud Storage Configuration
       - key: GOOGLE_CLOUD_STORAGE_BUCKET
         value: claims-documents-zurich-ai
-      - key: GOOGLE_APPLICATION_CREDENTIALS_JSON
-        value: /etc/secrets/velvety-glyph-464401-v6-6a68dc3c142f.json
       - key: GOOGLE_CLOUD_PROJECT_ID
         value: velvety-glyph-464401-v6
       - key: GOOGLE_CLOUD_STORAGE_FOLDER
         value: documentos
       
-      # AI/ML Services
-      - key: GEMINI_API_KEY
-        sync: false
-      
-      # Gmail API Configuration
-      - key: GMAIL_CREDENTIALS_JSON
-        sync: false
-      - key: GMAIL_TOKEN_JSON
-        sync: false
-      
       # Application Configuration
       - key: ENVIRONMENT
         value: production
-      - key: SECRET_KEY
-        sync: false
       - key: FROM_EMAIL
         value: gerardo_mayel_fernandez_alamilla@chiefdataaiofficer.com
       - key: GMAIL_USER_EMAIL
@@ -45,17 +31,11 @@ services:
       - key: LOGLEVEL
         value: info
       
-      # External Services
-      - key: RESEND_API_KEY
-        sync: false
-      
       # Domain Configuration
       - key: DOMAIN_NAME
         value: chiefdataaiofficer.com
       - key: WEBHOOK_EMAIL
         value: prueba@send.chiefdataaiofficer.com
-      - key: RESEND_WEBHOOK_SECRET
-        sync: false
 
   # Frontend Static Site
   - type: web

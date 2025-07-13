@@ -19,4 +19,15 @@ email-validator==2.1.0
 python-multipart==0.0.6
 
 # Utilities
-python-dateutil==2.8.2 
+python-dateutil==2.8.2
+
+# Google APIs
+google-auth-oauthlib==1.0.0
+google-auth==2.23.0
+google-api-python-client==2.108.0
+
+# Scheduling
+schedule==1.2.0
+
+# AI/ML
+google-generativeai==0.3.2 
