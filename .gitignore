@@ -75,6 +75,8 @@ out/
 token.json
 client_secret_*.json
 credentials.json
+gcs_credentials.json
+velvety-glyph-464401-v6-*.json
 *.pem
 *.key
 
