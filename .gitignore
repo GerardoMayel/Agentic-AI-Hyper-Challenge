@@ -37,6 +37,9 @@ venv.bak/
 .env.test.local
 .env.production.local
 
+# Authentication config (contains demo credentials)
+frontend/config/auth.js
+
 # IDE
 .vscode/
 .idea/

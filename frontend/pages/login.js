@@ -2,6 +2,7 @@ import Head from 'next/head'
 import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/router'
+import { AUTH_CONFIG } from '../config/auth'
 
 export default function Login() {
   const router = useRouter()
@@ -12,12 +13,6 @@ export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // Credenciales simples para demo
-  const VALID_CREDENTIALS = {
-    email: 'analyst@zurich.com',
-    password: 'zurich2024'
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
@@ -26,7 +21,7 @@ export default function Login() {
     // Simular delay de autenticación
     await new Promise(resolve => setTimeout(resolve, 1000))
 
-    if (formData.email === VALID_CREDENTIALS.email && formData.password === VALID_CREDENTIALS.password) {
+    if (formData.email === AUTH_CONFIG.demoCredentials.email && formData.password === AUTH_CONFIG.demoCredentials.password) {
       // Guardar estado de autenticación en localStorage
       localStorage.setItem('isAuthenticated', 'true')
       localStorage.setItem('userEmail', formData.email)
@@ -80,8 +75,8 @@ export default function Login() {
             {/* Demo Credentials */}
             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-blue-800 text-sm font-medium mb-2">Demo Credentials:</p>
-              <p className="text-blue-700 text-xs">Email: analyst@zurich.com</p>
-              <p className="text-blue-700 text-xs">Password: zurich2024</p>
+              <p className="text-blue-700 text-xs">Email: {AUTH_CONFIG.demoCredentials.email}</p>
+              <p className="text-blue-700 text-xs">Password: {AUTH_CONFIG.demoCredentials.password}</p>
             </div>
             
             <form onSubmit={handleSubmit}>
