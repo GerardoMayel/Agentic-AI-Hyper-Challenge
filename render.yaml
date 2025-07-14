@@ -36,6 +36,10 @@ services:
         value: chiefdataaiofficer.com
       - key: WEBHOOK_EMAIL
         value: prueba@send.chiefdataaiofficer.com
+      
+      # Security Configuration
+      - key: SECRET_KEY
+        generateValue: true
 
   # Frontend Static Site
   - type: web
@@ -51,7 +55,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: NEXT_PUBLIC_API_URL
-        value: https://agentic-ai-hyper-challenge-backend.onrender.com
+        value: https://zurich-claims-api.onrender.com
 
 databases:
   - name: claims-db

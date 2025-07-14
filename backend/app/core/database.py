@@ -20,20 +20,20 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL environment variable is required")
 
-# Add SSL parameters for Render PostgreSQL
-if DATABASE_URL.startswith("postgresql://"):
-    if "?" not in DATABASE_URL:
-        DATABASE_URL += "?sslmode=require&sslcert=&sslkey=&sslrootcert="
-    elif "sslmode" not in DATABASE_URL:
-        DATABASE_URL += "&sslmode=require&sslcert=&sslkey=&sslrootcert="
+# Fix DATABASE_URL for Render PostgreSQL (if needed)
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-# Create SQLAlchemy engine with SSL configuration
+# Create SQLAlchemy engine with robust configuration
 engine = create_engine(
     DATABASE_URL, 
     pool_pre_ping=True,
+    pool_recycle=300,  # Recycle connections every 5 minutes
+    pool_timeout=20,   # Connection timeout
+    max_overflow=10,   # Allow extra connections
     connect_args={
-        "sslmode": "require",
-        "connect_timeout": 10
+        "connect_timeout": 10,
+        "application_name": "zurich-claims-api"
     }
 )
 

@@ -11,20 +11,42 @@ import uvicorn
 import threading
 import time
 import os
+from sqlalchemy import text
 
 from app.core.database import engine, Base
 from app.models.email_models import Email, ClaimSubmission, DocumentAgentOCR, ClaimStatusUpdate, DashboardStats
 from app.services.email_scheduler import email_scheduler
 from app.api.analyst_api import router as analyst_router
 
-# Create tables
-Base.metadata.create_all(bind=engine)
+def init_database():
+    """Initialize database and create tables"""
+    try:
+        print("🔍 Testing database connection...")
+        
+        # Test connection
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+            print("✅ Database connection successful")
+        
+        # Create tables
+        Base.metadata.create_all(bind=engine)
+        print("✅ Database tables created/verified")
+        
+        return True
+        
+    except Exception as e:
+        print(f"❌ Database initialization failed: {e}")
+        return False
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifecycle manager for the application"""
     # Startup
     print("🚀 Starting Claims Management System...")
+    
+    # Initialize database
+    if not init_database():
+        print("⚠️  Database initialization failed, but continuing...")
     
     # Start email scheduler in separate thread
     def start_scheduler():
@@ -89,11 +111,19 @@ def analyst_dashboard():
 @app.get("/health")
 def health_check():
     """Health check endpoint"""
+    try:
+        # Test database connection
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        db_status = "connected"
+    except Exception as e:
+        db_status = f"error: {str(e)}"
+    
     return {
         "status": "healthy",
         "timestamp": time.time(),
         "services": {
-            "database": "connected",
+            "database": db_status,
             "email_scheduler": "running" if email_scheduler.is_running else "stopped",
             "gmail_service": "available",
             "llm_service": "available"
