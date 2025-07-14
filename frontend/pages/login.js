@@ -136,12 +136,12 @@ export default function Login() {
           </div>
           
           <div className="text-center mt-8">
-            <button 
-              onClick={() => window.history.back()}
+            <Link 
+              href="/"
               className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
             >
-              ← Back
-            </button>
+              ← Back to Home
+            </Link>
           </div>
         </div>
       </main>

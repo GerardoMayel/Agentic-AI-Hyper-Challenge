@@ -17,54 +17,110 @@ router = APIRouter(prefix="/api/analyst", tags=["Analyst Interface"])
 
 @router.get("/dashboard/stats")
 def get_dashboard_stats(db: Session = Depends(get_db)):
-    """Get dashboard statistics - only unique claims"""
-    try:
-        stats = db.query(DashboardStats).first()
-        if not stats:
-            stats = DashboardStats()
-            db.add(stats)
-            db.commit()
-            db.refresh(stats)
-        
-        # Calculate additional statistics
-        total_emails = db.query(Email).count()
-        total_documents = db.query(DocumentAgentOCR).count()
-        processed_emails = db.query(Email).filter(Email.is_processed == True).count()
-        unprocessed_emails = db.query(Email).filter(Email.is_processed == False).count()
-        
-        # Calculate claims by status
-        claims_by_status = db.query(ClaimSubmission.status, func.count(ClaimSubmission.id)).group_by(ClaimSubmission.status).all()
-        status_breakdown = {status: count for status, count in claims_by_status}
-        
-        # Handle None values safely (usar getattr para evitar errores de columna)
-        total_amount_requested = float(getattr(stats, 'total_amount_requested', 0) or 0)
-        total_amount_approved = float(getattr(stats, 'total_amount_approved', 0) or 0)
-        approval_rate = (total_amount_approved / total_amount_requested * 100) if total_amount_requested > 0 else 0
-        
-        return {
-            "claims_summary": {
-                "total_claims": getattr(stats, 'total_claims', 0) or 0,
-                "pending_claims": getattr(stats, 'pending_claims', 0) or 0,
-                "approved_claims": getattr(stats, 'approved_claims', 0) or 0,
-                "rejected_claims": getattr(stats, 'rejected_claims', 0) or 0,
-                "closed_claims": getattr(stats, 'closed_claims', 0) or 0,
-                "status_breakdown": status_breakdown
-            },
-            "financial_summary": {
-                "total_amount_requested": total_amount_requested,
-                "total_amount_approved": total_amount_approved,
-                "approval_rate": approval_rate
-            },
-            "processing_summary": {
-                "total_emails": total_emails,
-                "processed_emails": processed_emails,
-                "unprocessed_emails": unprocessed_emails,
-                "total_documents": total_documents
-            },
-            "last_updated": stats.last_updated.isoformat() if getattr(stats, 'last_updated', None) else None
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error getting statistics: {str(e)}")
+    """Get dashboard statistics with retry logic for slow database"""
+    import time
+    from sqlalchemy.exc import OperationalError
+    
+    max_retries = 3
+    retry_delay = 1  # seconds
+    
+    for attempt in range(max_retries):
+        try:
+            print(f"🔄 Fetching dashboard stats (attempt {attempt + 1}/{max_retries + 1})")
+            
+            # Get or create stats record
+            stats = db.query(DashboardStats).first()
+            if not stats:
+                stats = DashboardStats()
+                db.add(stats)
+                db.commit()
+                db.refresh(stats)
+            
+            # Calculate additional statistics with individual retries
+            try:
+                total_emails = db.query(Email).count()
+                print(f"✅ Total emails: {total_emails}")
+            except Exception as e:
+                print(f"⚠️ Error counting emails: {e}")
+                total_emails = 0
+                
+            try:
+                total_documents = db.query(DocumentAgentOCR).count()
+                print(f"✅ Total documents: {total_documents}")
+            except Exception as e:
+                print(f"⚠️ Error counting documents: {e}")
+                total_documents = 0
+                
+            try:
+                processed_emails = db.query(Email).filter(Email.is_processed == True).count()
+                unprocessed_emails = db.query(Email).filter(Email.is_processed == False).count()
+                print(f"✅ Processed emails: {processed_emails}, Unprocessed: {unprocessed_emails}")
+            except Exception as e:
+                print(f"⚠️ Error counting processed emails: {e}")
+                processed_emails = 0
+                unprocessed_emails = 0
+            
+            # Calculate claims by status
+            try:
+                claims_by_status = db.query(ClaimSubmission.status, func.count(ClaimSubmission.id)).group_by(ClaimSubmission.status).all()
+                status_breakdown = {status: count for status, count in claims_by_status}
+                print(f"✅ Claims by status: {status_breakdown}")
+            except Exception as e:
+                print(f"⚠️ Error calculating claims by status: {e}")
+                status_breakdown = {}
+            
+            # Handle None values safely (usar getattr para evitar errores de columna)
+            total_amount_requested = float(getattr(stats, 'total_amount_requested', 0) or 0)
+            total_amount_approved = float(getattr(stats, 'total_amount_approved', 0) or 0)
+            approval_rate = (total_amount_approved / total_amount_requested * 100) if total_amount_requested > 0 else 0
+            
+            result = {
+                "claims_summary": {
+                    "total_claims": getattr(stats, 'total_claims', 0) or 0,
+                    "pending_claims": getattr(stats, 'pending_claims', 0) or 0,
+                    "approved_claims": getattr(stats, 'approved_claims', 0) or 0,
+                    "rejected_claims": getattr(stats, 'rejected_claims', 0) or 0,
+                    "closed_claims": getattr(stats, 'closed_claims', 0) or 0,
+                    "status_breakdown": status_breakdown
+                },
+                "financial_summary": {
+                    "total_amount_requested": total_amount_requested,
+                    "total_amount_approved": total_amount_approved,
+                    "approval_rate": approval_rate
+                },
+                "processing_summary": {
+                    "total_emails": total_emails,
+                    "processed_emails": processed_emails,
+                    "unprocessed_emails": unprocessed_emails,
+                    "total_documents": total_documents
+                },
+                "last_updated": stats.last_updated.isoformat() if getattr(stats, 'last_updated', None) else None
+            }
+            
+            print(f"✅ Dashboard stats loaded successfully on attempt {attempt + 1}")
+            return result
+            
+        except OperationalError as e:
+            print(f"❌ Database operational error (attempt {attempt + 1}): {e}")
+            if attempt < max_retries - 1:
+                print(f"⏳ Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+                retry_delay *= 2  # Exponential backoff
+                continue
+            else:
+                raise HTTPException(status_code=503, detail="Database temporarily unavailable. Please try again in a few moments.")
+        except Exception as e:
+            print(f"❌ Unexpected error (attempt {attempt + 1}): {e}")
+            if attempt < max_retries - 1:
+                print(f"⏳ Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+                retry_delay *= 2
+                continue
+            else:
+                raise HTTPException(status_code=500, detail=f"Error getting statistics: {str(e)}")
+    
+    # This should never be reached, but just in case
+    raise HTTPException(status_code=500, detail="Failed to load dashboard statistics after multiple attempts")
 
 @router.get("/claims")
 def get_claims(
