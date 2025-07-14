@@ -40,6 +40,17 @@ def create_render_engine():
         connect_args={"connect_timeout": 30}
     )
 
+def transform_decimal_to_float(data):
+    """Transform decimal values to float for SQLite compatibility"""
+    from decimal import Decimal
+    transformed = {}
+    for key, value in data.items():
+        if isinstance(value, Decimal):
+            transformed[key] = float(value)
+        else:
+            transformed[key] = value
+    return transformed
+
 def sync_table_data(render_engine, sqlite_engine, table_name, query, transform_func=None):
     """Sync data from Render to SQLite for a specific table"""
     print(f"🔄 Syncing {table_name}...")
@@ -56,9 +67,26 @@ def sync_table_data(render_engine, sqlite_engine, table_name, query, transform_f
             print(f"   ⏭️ No data to sync for {table_name}")
             return 0
         
-        # Transform data if needed
-        if transform_func:
-            render_data = [transform_func(row) for row in render_data]
+        # Transform data for SQLite compatibility
+        transformed_data = []
+        for row in render_data:
+            # Apply custom transform if provided
+            if transform_func:
+                row = transform_func(row)
+            
+            # Apply default transforms for SQLite compatibility
+            transformed_row = {}
+            for key, value in row.items():
+                # Convert Decimal to float
+                if hasattr(value, '__class__') and value.__class__.__name__ == 'Decimal':
+                    transformed_row[key] = float(value)
+                # Convert datetime objects to strings
+                elif hasattr(value, 'isoformat'):
+                    transformed_row[key] = value.isoformat()
+                else:
+                    transformed_row[key] = value
+            
+            transformed_data.append(transformed_row)
         
         # Write to SQLite
         with sqlite_engine.connect() as conn:
@@ -67,12 +95,7 @@ def sync_table_data(render_engine, sqlite_engine, table_name, query, transform_f
             conn.commit()
             
             # Insert new data
-            for i, row in enumerate(render_data):
-                # Convert datetime objects to strings for SQLite
-                for key, value in row.items():
-                    if hasattr(value, 'isoformat'):
-                        row[key] = value.isoformat()
-                
+            for i, row in enumerate(transformed_data):
                 # Build INSERT statement
                 columns = ', '.join(row.keys())
                 placeholders = ', '.join([':' + key for key in row.keys()])
@@ -81,12 +104,12 @@ def sync_table_data(render_engine, sqlite_engine, table_name, query, transform_f
                 conn.execute(text(insert_query), row)
                 
                 if (i + 1) % 100 == 0:
-                    print(f"   📝 Inserted {i + 1}/{len(render_data)} records")
+                    print(f"   📝 Inserted {i + 1}/{len(transformed_data)} records")
             
             conn.commit()
         
-        print(f"   ✅ Synced {len(render_data)} records to SQLite")
-        return len(render_data)
+        print(f"   ✅ Synced {len(transformed_data)} records to SQLite")
+        return len(transformed_data)
         
     except Exception as e:
         print(f"   ❌ Error syncing {table_name}: {e}")
@@ -103,7 +126,7 @@ def sync_claims_data(render_engine, sqlite_engine):
     ORDER BY created_at DESC
     """
     
-    return sync_table_data(render_engine, sqlite_engine, "claim_submissions", query)
+    return sync_table_data(render_engine, sqlite_engine, "claim_submissions", query, transform_decimal_to_float)
 
 def sync_emails_data(render_engine, sqlite_engine):
     """Sync emails data"""
@@ -141,7 +164,7 @@ def sync_dashboard_stats(render_engine, sqlite_engine):
     LIMIT 1
     """
     
-    return sync_table_data(render_engine, sqlite_engine, "dashboard_stats", query)
+    return sync_table_data(render_engine, sqlite_engine, "dashboard_stats", query, transform_decimal_to_float)
 
 def sync_status_updates(render_engine, sqlite_engine):
     """Sync status updates"""

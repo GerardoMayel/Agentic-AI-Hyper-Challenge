@@ -100,10 +100,10 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-blue-800 flex items-center justify-center">
-        <div className="text-white text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-lg mb-2">Loading dashboard data...</p>
-          <p className="text-sm text-blue-200">Connecting to database (this may take a few seconds)</p>
+              <div className="text-white text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+        <p className="text-lg mb-2">Loading dashboard overview...</p>
+        <p className="text-sm text-blue-200">Connecting to database (this may take a few seconds)</p>
           {error && (
             <div className="mt-4 p-3 bg-yellow-900/50 rounded-lg">
               <p className="text-yellow-200 text-sm">{error}</p>
