@@ -38,20 +38,54 @@ export default function Dashboard() {
     fetchData()
   }, [])
 
-  const fetchData = async () => {
+  const fetchData = async (retryCount = 0) => {
+    const maxRetries = 3
+    const baseDelay = 2000 // 2 seconds base delay
+    
     try {
       setLoading(true)
+      setError('')
       
-      // Fetch stats only
-      const statsResponse = await fetch('https://zurich-claims-api.onrender.com/api/analyst/dashboard/stats')
+      console.log(`🔄 Attempting to fetch dashboard data (attempt ${retryCount + 1}/${maxRetries + 1})`)
+      
+      // Fetch stats with timeout
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout
+      
+      const statsResponse = await fetch('https://zurich-claims-api.onrender.com/api/analyst/dashboard/stats', {
+        signal: controller.signal
+      })
+      
+      clearTimeout(timeoutId)
+      
+      if (!statsResponse.ok) {
+        throw new Error(`HTTP ${statsResponse.status}: ${statsResponse.statusText}`)
+      }
+      
       const statsData = await statsResponse.json()
+      console.log('✅ Dashboard data loaded successfully:', statsData)
       setStats(statsData)
       
     } catch (err) {
-      console.error('Error fetching data:', err)
-      setError('Failed to load dashboard data')
+      console.error(`❌ Error fetching data (attempt ${retryCount + 1}):`, err)
+      
+      if (retryCount < maxRetries) {
+        const delay = baseDelay * Math.pow(2, retryCount) // Exponential backoff
+        console.log(`⏳ Retrying in ${delay/1000} seconds...`)
+        
+        setError(`Database connection slow, retrying... (${retryCount + 1}/${maxRetries + 1})`)
+        
+        setTimeout(() => {
+          fetchData(retryCount + 1)
+        }, delay)
+        return
+      } else {
+        setError(`Failed to load dashboard data after ${maxRetries + 1} attempts. The database may be temporarily unavailable.`)
+      }
     } finally {
-      setLoading(false)
+      if (retryCount >= maxRetries) {
+        setLoading(false)
+      }
     }
   }
 
@@ -68,7 +102,13 @@ export default function Dashboard() {
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-blue-800 flex items-center justify-center">
         <div className="text-white text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p>Loading dashboard...</p>
+          <p className="text-lg mb-2">Loading dashboard data...</p>
+          <p className="text-sm text-blue-200">Connecting to database (this may take a few seconds)</p>
+          {error && (
+            <div className="mt-4 p-3 bg-yellow-900/50 rounded-lg">
+              <p className="text-yellow-200 text-sm">{error}</p>
+            </div>
+          )}
         </div>
       </div>
     )
@@ -105,7 +145,18 @@ export default function Dashboard() {
         {error && (
           <div className="max-w-7xl mx-auto px-4 py-4">
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-600">{error}</p>
+              <div className="flex items-center">
+                <div className="text-red-500 mr-3">⚠️</div>
+                <div>
+                  <p className="text-red-600 font-medium">{error}</p>
+                  <button 
+                    onClick={() => fetchData()}
+                    className="mt-2 text-red-700 underline hover:no-underline"
+                  >
+                    Try again
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
