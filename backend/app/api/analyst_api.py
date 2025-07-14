@@ -488,6 +488,7 @@ def login(email: str = Form(...), password: str = Form(...), db: Session = Depen
         from sqlalchemy import text
         from sqlalchemy.exc import OperationalError
         import time
+        import hashlib
         
         max_retries = 3
         retry_delay = 1  # seconds
@@ -517,10 +518,12 @@ def login(email: str = Form(...), password: str = Form(...), db: Session = Depen
         if not result:
             raise HTTPException(status_code=401, detail="Invalid credentials")
         
-        stored_email, stored_password, role = result
+        stored_email, stored_password_hash, role = result
         
-        # Simple password comparison (in production, use proper hashing)
-        if password == stored_password:
+        # Hash the provided password and compare
+        password_hash = hashlib.sha256(password.encode()).hexdigest()
+        
+        if password_hash == stored_password_hash:
             return {
                 "success": True,
                 "user": {
