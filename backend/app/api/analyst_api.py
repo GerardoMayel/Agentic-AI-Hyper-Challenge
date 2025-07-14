@@ -482,67 +482,15 @@ def analyze_claim_with_llm(claim_id: int, db: Session = Depends(get_db)):
 
 @router.post("/auth/login")
 def login(email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
-    """Authenticate analyst with credentials from database"""
-    try:
-        # Query credentials from database with retry logic
-        from sqlalchemy import text
-        from sqlalchemy.exc import OperationalError
-        import time
-        import hashlib
-        from app.core.database import engine
-        
-        max_retries = 5
-        retry_delay = 1  # seconds
-        
-        for attempt in range(max_retries):
-            try:
-                result = db.execute(
-                    text("SELECT email, password_hash, role FROM auth_credentials WHERE email = :email AND is_active = true"),
-                    {"email": email}
-                ).fetchone()
-                
-                if result:
-                    break  # Success, exit retry loop
-                else:
-                    raise HTTPException(status_code=401, detail="Invalid credentials")
-                    
-            except OperationalError as db_error:
-                error_str = str(db_error)
-                if ("SSL connection has been closed" in error_str or "connection is closed" in error_str) and attempt < max_retries - 1:
-                    print(f"[POOL] Connection error, disposing engine and retrying in {retry_delay} seconds... (attempt {attempt + 1}/{max_retries})")
-                    engine.dispose()
-                    time.sleep(retry_delay)
-                    retry_delay *= 2  # Exponential backoff
-                    continue
-                else:
-                    # If it's the last attempt or a different error, raise it
-                    raise HTTPException(status_code=503, detail="Database temporarily unavailable. Please try again in a few moments.")
-        
-        if not result:
-            raise HTTPException(status_code=401, detail="Invalid credentials")
-        
-        stored_email, stored_password_hash, role = result
-        
-        # Hash the provided password and compare
-        password_hash = hashlib.sha256(password.encode()).hexdigest()
-        
-        if password_hash == stored_password_hash:
-            return {
-                "success": True,
-                "user": {
-                    "email": stored_email,
-                    "role": role
-                },
-                "message": "Authentication successful"
-            }
-        else:
-            raise HTTPException(status_code=401, detail="Invalid credentials")
-            
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"Login error: {str(e)}")
-        raise HTTPException(status_code=500, detail="Authentication service temporarily unavailable. Please try again.")
+    """Simulación de login: acepta cualquier usuario y contraseña"""
+    return {
+        "success": True,
+        "user": {
+            "email": email or "analyst@zurich-demo.com",
+            "role": "analyst"
+        },
+        "message": "Authentication successful (simulated)"
+    }
 
 @router.get("/auth/credentials")
 def get_demo_credentials(db: Session = Depends(get_db)):
