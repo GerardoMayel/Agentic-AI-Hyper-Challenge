@@ -242,7 +242,8 @@ def main():
         
     except Exception as e:
         print(f"\n❌ Sync failed: {e}")
-        sys.exit(1)
+        # Don't exit, just raise the exception to be handled by the caller
+        raise
 
 if __name__ == "__main__":
     main() 

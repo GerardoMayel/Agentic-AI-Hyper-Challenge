@@ -76,9 +76,13 @@ def main():
         print("\n📊 Production sync required...")
         
         if db_available:
-            sync_success = run_sync()
-            if not sync_success:
-                print("⚠️  Sync failed but continuing with server startup")
+            try:
+                sync_success = run_sync()
+                if not sync_success:
+                    print("⚠️  Sync failed but continuing with server startup")
+            except Exception as e:
+                print(f"❌ Sync process failed completely: {e}")
+                print("⚠️  Continuing with server startup using fallback data")
         else:
             print("⚠️  Database not available - skipping sync")
             print("🔄 Using SQLite fallback database")
@@ -86,7 +90,7 @@ def main():
         print("\n📊 Development mode - skipping sync")
         print("Set FORCE_SYNC=true to enable sync in development")
     
-    # Start the server
+    # Start the server regardless of sync status
     print("\n🚀 Starting server...")
     start_server()
 
