@@ -484,12 +484,35 @@ def analyze_claim_with_llm(claim_id: int, db: Session = Depends(get_db)):
 def login(email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     """Authenticate analyst with credentials from database"""
     try:
-        # Query credentials from database
+        # Query credentials from database with retry logic
         from sqlalchemy import text
-        result = db.execute(
-            text("SELECT email, password_hash, role FROM auth_credentials WHERE email = :email AND is_active = true"),
-            {"email": email}
-        ).fetchone()
+        from sqlalchemy.exc import OperationalError
+        import time
+        
+        max_retries = 3
+        retry_delay = 1  # seconds
+        
+        for attempt in range(max_retries):
+            try:
+                result = db.execute(
+                    text("SELECT email, password_hash, role FROM auth_credentials WHERE email = :email AND is_active = true"),
+                    {"email": email}
+                ).fetchone()
+                
+                if result:
+                    break  # Success, exit retry loop
+                else:
+                    raise HTTPException(status_code=401, detail="Invalid credentials")
+                    
+            except OperationalError as db_error:
+                if "SSL connection has been closed" in str(db_error) and attempt < max_retries - 1:
+                    print(f"SSL connection error, retrying in {retry_delay} seconds... (attempt {attempt + 1}/{max_retries})")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+                    continue
+                else:
+                    # If it's the last attempt or a different error, raise it
+                    raise HTTPException(status_code=503, detail="Database temporarily unavailable. Please try again in a few moments.")
         
         if not result:
             raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -512,7 +535,8 @@ def login(email: str = Form(...), password: str = Form(...), db: Session = Depen
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Authentication error: {str(e)}")
+        print(f"Login error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Authentication service temporarily unavailable. Please try again.")
 
 @router.get("/auth/credentials")
 def get_demo_credentials(db: Session = Depends(get_db)):
