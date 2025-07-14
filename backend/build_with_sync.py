@@ -24,7 +24,21 @@ def run_sync():
         return True
     except Exception as e:
         print(f"❌ Sync failed: {e}")
-        print("⚠️  Continuing without sync - will use existing SQLite data")
+        print("⚠️  Continuing without sync - will use existing SQLite data or simulated data")
+        return False
+
+def check_database_connection():
+    """Check if we can connect to the database"""
+    try:
+        from app.core.database import engine
+        from sqlalchemy import text
+        
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+            print("✅ Database connection successful")
+            return True
+    except Exception as e:
+        print(f"⚠️  Database connection failed: {e}")
         return False
 
 def start_server():
@@ -54,13 +68,20 @@ def main():
     is_production = os.environ.get("ENVIRONMENT") == "production"
     print(f"Environment: {'Production' if is_production else 'Development'}")
     
-    # Always try to sync in production, optionally in development
+    # Check database connection first
+    db_available = check_database_connection()
+    
+    # Only try to sync if database is available
     if is_production or os.environ.get("FORCE_SYNC") == "true":
         print("\n📊 Production sync required...")
-        sync_success = run_sync()
         
-        if not sync_success:
-            print("⚠️  Sync failed but continuing with server startup")
+        if db_available:
+            sync_success = run_sync()
+            if not sync_success:
+                print("⚠️  Sync failed but continuing with server startup")
+        else:
+            print("⚠️  Database not available - skipping sync")
+            print("🔄 Using SQLite fallback database")
     else:
         print("\n📊 Development mode - skipping sync")
         print("Set FORCE_SYNC=true to enable sync in development")
