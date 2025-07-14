@@ -36,18 +36,18 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
         claims_by_status = db.query(ClaimSubmission.status, func.count(ClaimSubmission.id)).group_by(ClaimSubmission.status).all()
         status_breakdown = {status: count for status, count in claims_by_status}
         
-        # Handle None values safely
-        total_amount_requested = float(stats.total_amount_requested or 0)
-        total_amount_approved = float(stats.total_amount_approved or 0)
+        # Handle None values safely (usar getattr para evitar errores de columna)
+        total_amount_requested = float(getattr(stats, 'total_amount_requested', 0) or 0)
+        total_amount_approved = float(getattr(stats, 'total_amount_approved', 0) or 0)
         approval_rate = (total_amount_approved / total_amount_requested * 100) if total_amount_requested > 0 else 0
         
         return {
             "claims_summary": {
-                "total_claims": stats.total_claims or 0,
-                "pending_claims": stats.pending_claims or 0,
-                "approved_claims": stats.approved_claims or 0,
-                "rejected_claims": stats.rejected_claims or 0,
-                "closed_claims": stats.closed_claims or 0,
+                "total_claims": getattr(stats, 'total_claims', 0) or 0,
+                "pending_claims": getattr(stats, 'pending_claims', 0) or 0,
+                "approved_claims": getattr(stats, 'approved_claims', 0) or 0,
+                "rejected_claims": getattr(stats, 'rejected_claims', 0) or 0,
+                "closed_claims": getattr(stats, 'closed_claims', 0) or 0,
                 "status_breakdown": status_breakdown
             },
             "financial_summary": {
@@ -61,7 +61,7 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
                 "unprocessed_emails": unprocessed_emails,
                 "total_documents": total_documents
             },
-            "last_updated": stats.last_updated.isoformat() if stats.last_updated else None
+            "last_updated": stats.last_updated.isoformat() if getattr(stats, 'last_updated', None) else None
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting statistics: {str(e)}")
@@ -140,23 +140,23 @@ def get_claim_details(claim_id: int, db: Session = Depends(get_db)):
                 "customer_email": claim.customer_email,
                 "policy_number": claim.policy_number,
                 "claim_type": claim.claim_type,
-                "incident_date": claim.incident_date.isoformat() if claim.incident_date else None,
+                "incident_date": claim.incident_date.isoformat() if getattr(claim, 'incident_date', None) else None,
                 "incident_description": claim.incident_description,
-                "estimated_amount": float(claim.estimated_amount) if claim.estimated_amount else None,
+                "estimated_amount": float(getattr(claim, 'estimated_amount', 0)) if getattr(claim, 'estimated_amount', None) is not None else None,
                 "status": claim.status,
                 "priority": claim.priority,
                 "llm_summary": claim.llm_summary,
                 "llm_recommendation": claim.llm_recommendation,
-                "created_at": claim.created_at.isoformat(),
-                "updated_at": claim.updated_at.isoformat() if claim.updated_at else None,
-                "closed_at": claim.closed_at.isoformat() if claim.closed_at else None
+                "created_at": claim.created_at.isoformat() if getattr(claim, 'created_at', None) else None,
+                "updated_at": claim.updated_at.isoformat() if getattr(claim, 'updated_at', None) else None,
+                "closed_at": claim.closed_at.isoformat() if getattr(claim, 'closed_at', None) else None
             },
             "email": {
                 "id": email.id if email else None,
                 "subject": email.subject if email else None,
                 "from_email": email.from_email if email else None,
                 "body_text": email.body_text if email else None,
-                "received_at": email.received_at.isoformat() if email and email.received_at else None
+                "received_at": email.received_at.isoformat() if email and getattr(email, 'received_at', None) else None
             } if email else None,
             "documents": [
                 {
@@ -167,7 +167,7 @@ def get_claim_details(claim_id: int, db: Session = Depends(get_db)):
                     "document_type": doc.document_type,
                     "storage_url": doc.storage_url,
                     "is_processed": doc.is_processed,
-                    "uploaded_at": doc.uploaded_at.isoformat(),
+                    "uploaded_at": doc.uploaded_at.isoformat() if getattr(doc, 'uploaded_at', None) else None,
                     "ocr_text": doc.ocr_text[:500] + "..." if doc.ocr_text and len(doc.ocr_text) > 500 else doc.ocr_text
                 }
                 for doc in documents
@@ -179,7 +179,7 @@ def get_claim_details(claim_id: int, db: Session = Depends(get_db)):
                     "new_status": update.new_status,
                     "reason": update.reason,
                     "analyst_name": update.analyst_name,
-                    "created_at": update.created_at.isoformat()
+                    "created_at": update.created_at.isoformat() if getattr(update, 'created_at', None) else None
                 }
                 for update in status_updates
             ]
@@ -489,8 +489,9 @@ def login(email: str = Form(...), password: str = Form(...), db: Session = Depen
         from sqlalchemy.exc import OperationalError
         import time
         import hashlib
+        from app.core.database import engine
         
-        max_retries = 3
+        max_retries = 5
         retry_delay = 1  # seconds
         
         for attempt in range(max_retries):
@@ -506,8 +507,10 @@ def login(email: str = Form(...), password: str = Form(...), db: Session = Depen
                     raise HTTPException(status_code=401, detail="Invalid credentials")
                     
             except OperationalError as db_error:
-                if "SSL connection has been closed" in str(db_error) and attempt < max_retries - 1:
-                    print(f"SSL connection error, retrying in {retry_delay} seconds... (attempt {attempt + 1}/{max_retries})")
+                error_str = str(db_error)
+                if ("SSL connection has been closed" in error_str or "connection is closed" in error_str) and attempt < max_retries - 1:
+                    print(f"[POOL] Connection error, disposing engine and retrying in {retry_delay} seconds... (attempt {attempt + 1}/{max_retries})")
+                    engine.dispose()
                     time.sleep(retry_delay)
                     retry_delay *= 2  # Exponential backoff
                     continue
