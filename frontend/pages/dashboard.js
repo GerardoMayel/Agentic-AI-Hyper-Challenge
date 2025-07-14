@@ -6,14 +6,25 @@ import { useRouter } from 'next/router'
 export default function Dashboard() {
   const router = useRouter()
   const [stats, setStats] = useState({
-    total_claims: 0,
-    pending_claims: 0,
-    approved_claims: 0,
-    rejected_claims: 0,
-    total_emails: 0,
-    processed_emails: 0
+    claims_summary: {
+      total_claims: 0,
+      pending_claims: 0,
+      approved_claims: 0,
+      rejected_claims: 0,
+      closed_claims: 0
+    },
+    processing_summary: {
+      total_emails: 0,
+      processed_emails: 0,
+      unprocessed_emails: 0,
+      total_documents: 0
+    },
+    financial_summary: {
+      total_amount_requested: 0,
+      total_amount_approved: 0,
+      approval_rate: 0
+    }
   })
-  const [claims, setClaims] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -31,15 +42,10 @@ export default function Dashboard() {
     try {
       setLoading(true)
       
-      // Fetch stats
+      // Fetch stats only
       const statsResponse = await fetch('https://zurich-claims-api.onrender.com/api/analyst/dashboard/stats')
       const statsData = await statsResponse.json()
       setStats(statsData)
-
-      // Fetch claims
-      const claimsResponse = await fetch('https://zurich-claims-api.onrender.com/api/analyst/claims')
-      const claimsData = await claimsResponse.json()
-      setClaims(claimsData)
       
     } catch (err) {
       console.error('Error fetching data:', err)
@@ -49,33 +55,7 @@ export default function Dashboard() {
     }
   }
 
-  const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'approved': return 'bg-green-100 text-green-800'
-      case 'pending': return 'bg-yellow-100 text-yellow-800'
-      case 'rejected': return 'bg-red-100 text-red-800'
-      case 'pending_information': return 'bg-orange-100 text-orange-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
-  }
 
-  const getSentimentColor = (sentiment) => {
-    switch (sentiment?.toLowerCase()) {
-      case 'positive': return 'bg-green-500'
-      case 'negative': return 'bg-red-500'
-      case 'neutral': return 'bg-yellow-500'
-      default: return 'bg-gray-500'
-    }
-  }
-
-  const getSentimentText = (sentiment) => {
-    switch (sentiment?.toLowerCase()) {
-      case 'positive': return 'Positive'
-      case 'negative': return 'Negative'
-      case 'neutral': return 'Neutral'
-      default: return 'Unknown'
-    }
-  }
 
   const handleLogout = () => {
     localStorage.removeItem('isAuthenticated')
@@ -140,99 +120,71 @@ export default function Dashboard() {
               <div className="p-8 bg-white rounded-2xl shadow-xl border border-slate-100 text-center">
                 <div className="text-5xl mb-4">📊</div>
                 <h3 className="text-2xl font-bold text-slate-800 mb-2">Total Claims</h3>
-                <div className="text-4xl font-bold text-blue-600 mb-2">{stats.total_claims}</div>
+                <div className="text-4xl font-bold text-blue-600 mb-2">{stats.claims_summary?.total_claims || 0}</div>
                 <p className="text-slate-600 font-medium">All time</p>
               </div>
               
               <div className="p-8 bg-white rounded-2xl shadow-xl border border-slate-100 text-center">
                 <div className="text-5xl mb-4">⏳</div>
                 <h3 className="text-2xl font-bold text-slate-800 mb-2">Pending</h3>
-                <div className="text-4xl font-bold text-orange-600 mb-2">{stats.pending_claims}</div>
+                <div className="text-4xl font-bold text-orange-600 mb-2">{stats.claims_summary?.pending_claims || 0}</div>
                 <p className="text-slate-600 font-medium">Under review</p>
               </div>
               
               <div className="p-8 bg-white rounded-2xl shadow-xl border border-slate-100 text-center">
                 <div className="text-5xl mb-4">✅</div>
                 <h3 className="text-2xl font-bold text-slate-800 mb-2">Approved</h3>
-                <div className="text-4xl font-bold text-green-600 mb-2">{stats.approved_claims}</div>
+                <div className="text-4xl font-bold text-green-600 mb-2">{stats.claims_summary?.approved_claims || 0}</div>
                 <p className="text-slate-600 font-medium">Processed</p>
               </div>
               
               <div className="p-8 bg-white rounded-2xl shadow-xl border border-slate-100 text-center">
                 <div className="text-5xl mb-4">❌</div>
                 <h3 className="text-2xl font-bold text-slate-800 mb-2">Rejected</h3>
-                <div className="text-4xl font-bold text-red-600 mb-2">{stats.rejected_claims}</div>
+                <div className="text-4xl font-bold text-red-600 mb-2">{stats.claims_summary?.rejected_claims || 0}</div>
                 <p className="text-slate-600 font-medium">Declined</p>
               </div>
               
               <div className="p-8 bg-white rounded-2xl shadow-xl border border-slate-100 text-center">
                 <div className="text-5xl mb-4">📧</div>
                 <h3 className="text-2xl font-bold text-slate-800 mb-2">Total Emails</h3>
-                <div className="text-4xl font-bold text-purple-600 mb-2">{stats.total_emails}</div>
+                <div className="text-4xl font-bold text-purple-600 mb-2">{stats.processing_summary?.total_emails || 0}</div>
                 <p className="text-slate-600 font-medium">Received</p>
               </div>
               
               <div className="p-8 bg-white rounded-2xl shadow-xl border border-slate-100 text-center">
                 <div className="text-5xl mb-4">⚡</div>
                 <h3 className="text-2xl font-bold text-slate-800 mb-2">Processed</h3>
-                <div className="text-4xl font-bold text-indigo-600 mb-2">{stats.processed_emails}</div>
+                <div className="text-4xl font-bold text-indigo-600 mb-2">{stats.processing_summary?.processed_emails || 0}</div>
                 <p className="text-slate-600 font-medium">Automated</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Claims Table */}
+        {/* Analyst Access Section */}
         <div className="w-full py-16 bg-white">
           <div className="max-w-7xl mx-auto px-4">
             <h2 className="text-3xl font-bold text-slate-800 text-center mb-12">
-              Recent Claims
+              Analyst Access
             </h2>
-            <div className="bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-slate-50">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Claim ID</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Customer Email</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Status</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Sentiment</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Created</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {claims.map((claim) => (
-                      <tr key={claim.id} className="hover:bg-slate-50">
-                        <td className="px-6 py-4 text-sm font-medium text-slate-900">{claim.claim_id}</td>
-                        <td className="px-6 py-4 text-sm text-slate-700">{claim.customer_email}</td>
-                        <td className="px-6 py-4">
-                          <span className={`px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(claim.status)}`}>
-                            {claim.status || 'New'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center space-x-2">
-                            <div className={`w-3 h-3 rounded-full ${getSentimentColor(claim.sentiment_analysis)}`}></div>
-                            <span className="text-sm text-slate-700">{getSentimentText(claim.sentiment_analysis)}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-slate-700">
-                          {new Date(claim.created_at).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4">
-                          <Link 
-                            href={`/claim/${claim.id}`}
-                            className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                          >
-                            View Details
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <div className="bg-white rounded-xl shadow-lg border border-slate-100 p-8 text-center">
+              <div className="text-6xl mb-6">🔍</div>
+              <h3 className="text-2xl font-bold text-slate-800 mb-4">
+                Detailed Claims Analysis
+              </h3>
+              <p className="text-slate-600 mb-8 max-w-2xl mx-auto">
+                Access the comprehensive analyst interface to review individual claims, 
+                view AI recommendations, and make final determinations on claim status.
+              </p>
+              <a 
+                href="https://zurich-claims-api.onrender.com/analyst"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-blue-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 shadow-xl"
+              >
+                Open Analyst Interface
+              </a>
             </div>
           </div>
         </div>
