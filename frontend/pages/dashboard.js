@@ -229,7 +229,7 @@ export default function Dashboard() {
                 view AI recommendations, and make final determinations on claim status.
               </p>
               <a 
-                href="https://zurich-claims-api.onrender.com/analyst"
+                href="/analyst"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-blue-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 shadow-xl"

@@ -103,10 +103,7 @@ def read_root():
         }
     }
 
-@app.get("/analyst")
-def analyst_dashboard():
-    """Analyst dashboard interface"""
-    return FileResponse("app/static/analyst_dashboard.html")
+# Removed analyst dashboard endpoint - now handled by frontend
 
 @app.get("/health")
 def health_check():
