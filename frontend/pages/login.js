@@ -16,44 +16,32 @@ export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
     setError('')
 
     try {
-      // Create form data for the API
-      const formDataToSend = new FormData()
-      formDataToSend.append('email', formData.email)
-      formDataToSend.append('password', formData.password)
-
-      const response = await fetch(`${BACKEND_URL}/api/analyst/auth/login`, {
-        method: 'POST',
-        body: formDataToSend
-      })
-
-      if (response.ok) {
-        const result = await response.json()
-        
-        // Guardar estado de autenticación en localStorage
-        localStorage.setItem('isAuthenticated', 'true')
-        localStorage.setItem('userEmail', result.user.email)
-        localStorage.setItem('userRole', result.user.role)
-        
-        // Redirigir al dashboard
-        router.push('/dashboard')
-      } else {
-        const errorData = await response.json()
-        setError(errorData.detail || 'Invalid email or password. Please try again.')
-      }
+      // SIMULACIÓN DE LOGIN - ACEPTA CUALQUIER CREDENCIAL
+      // Para desarrollo y pruebas, no verificamos credenciales reales
+      console.log('🔓 Login simulado - aceptando cualquier credencial')
+      
+      // Simular delay para mostrar loading
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Guardar estado de autenticación en localStorage
+      localStorage.setItem('isAuthenticated', 'true')
+      localStorage.setItem('userEmail', formData.email || 'demo@zurich.com')
+      localStorage.setItem('userRole', 'analyst')
+      
+      console.log('✅ Login simulado exitoso')
+      
+      // Redirigir al dashboard
+      router.push('/dashboard')
+      
     } catch (error) {
       console.error('Login error:', error)
-      if (error.message.includes('fetch')) {
-        setError('Cannot connect to server. Please check your connection.')
-      } else {
-        setError('An unexpected error occurred. Please try again.')
-      }
+      setError('An unexpected error occurred. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -91,13 +79,18 @@ export default function Login() {
               Sign in to access your dashboard
             </p>
             
+            {/* Mensaje informativo para desarrollo */}
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-blue-600 text-sm">
+                <strong>Modo Desarrollo:</strong> Ingresa cualquier email y contraseña para acceder
+              </p>
+            </div>
+            
             {error && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-red-600 text-sm">{error}</p>
               </div>
             )}
-
-
             
             <form onSubmit={handleSubmit}>
               <div className="mb-6">
