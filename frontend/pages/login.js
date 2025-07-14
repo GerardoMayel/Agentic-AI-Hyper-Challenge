@@ -79,10 +79,10 @@ export default function Login() {
               Sign in to access your dashboard
             </p>
             
-            {/* Mensaje informativo para desarrollo */}
+            {/* Development mode info */}
             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-blue-600 text-sm">
-                <strong>Modo Desarrollo:</strong> Ingresa cualquier email y contraseña para acceder
+                <strong>Development Mode:</strong> Enter any email and password to access
               </p>
             </div>
             
