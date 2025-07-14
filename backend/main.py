@@ -111,6 +111,8 @@ def analyst_dashboard():
 @app.get("/health")
 def health_check():
     """Health check endpoint"""
+    from app.core.database import get_current_database_info
+    
     try:
         # Test database connection
         with engine.connect() as conn:
@@ -119,11 +121,16 @@ def health_check():
     except Exception as e:
         db_status = f"error: {str(e)}"
     
+    db_info = get_current_database_info()
+    
     return {
         "status": "healthy",
         "timestamp": time.time(),
+        "database": {
+            "status": db_status,
+            "info": db_info
+        },
         "services": {
-            "database": db_status,
             "email_scheduler": "running" if email_scheduler.is_running else "stopped",
             "gmail_service": "available",
             "llm_service": "available"
