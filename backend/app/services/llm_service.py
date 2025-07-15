@@ -27,6 +27,30 @@ class LLMService:
             print(f"❌ Error in LLM analysis: {e}")
             return ""
     
+    def generate_text(self, prompt: str) -> str:
+        """Generate text using Gemini (alias for analyze_text)"""
+        return self.analyze_text(prompt)
+    
+    def generate_text_with_image(self, prompt: str, image_base64: str) -> str:
+        """Generate text from image using Gemini Vision API"""
+        try:
+            import base64
+            from PIL import Image
+            import io
+            
+            # Decode base64 image
+            image_data = base64.b64decode(image_base64)
+            image = Image.open(io.BytesIO(image_data))
+            
+            # Use Gemini Vision model
+            vision_model = genai.GenerativeModel('gemini-1.5-flash')
+            response = vision_model.generate_content([prompt, image])
+            
+            return response.text.strip()
+        except Exception as e:
+            print(f"❌ Error in image analysis: {e}")
+            return ""
+    
     def extract_structured_data(self, text: str, fields: list) -> Dict[str, Any]:
         """Extract structured data from text"""
         try:

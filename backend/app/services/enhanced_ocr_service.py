@@ -8,13 +8,13 @@ import os
 import json
 import base64
 from typing import Dict, Any, List, Optional
-from app.services.llm_service import GeminiService
+from app.services.llm_service import LLMService
 
 class EnhancedOCRService:
     """Service for enhanced document processing with Gemini AI"""
     
     def __init__(self):
-        self.gemini_service = GeminiService()
+        self.gemini_service = LLMService()
         
         # Supported document types
         self.supported_types = [

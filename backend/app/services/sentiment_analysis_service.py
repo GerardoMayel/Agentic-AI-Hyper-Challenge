@@ -7,13 +7,13 @@ Analyzes claim descriptions and provides detailed recommendations
 import os
 import json
 from typing import Dict, Any, Optional
-from app.services.llm_service import GeminiService
+from app.services.llm_service import LLMService
 
 class SentimentAnalysisService:
     """Service for analyzing claim sentiment and generating recommendations"""
     
     def __init__(self):
-        self.gemini_service = GeminiService()
+        self.gemini_service = LLMService()
         
         # Available coverage types in the system
         self.coverage_types = [
