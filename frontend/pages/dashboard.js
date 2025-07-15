@@ -65,6 +65,7 @@ export default function Dashboard() {
       const statsData = await statsResponse.json()
       console.log('✅ Dashboard data loaded successfully:', statsData)
       setStats(statsData)
+      setLoading(false) // Set loading to false on success
       
     } catch (err) {
       console.error(`❌ Error fetching data (attempt ${retryCount + 1}):`, err)
@@ -81,10 +82,7 @@ export default function Dashboard() {
         return
       } else {
         setError(`Failed to load dashboard data after ${maxRetries + 1} attempts. The database may be temporarily unavailable.`)
-      }
-    } finally {
-      if (retryCount >= maxRetries) {
-        setLoading(false)
+        setLoading(false) // Set loading to false on final failure
       }
     }
   }
