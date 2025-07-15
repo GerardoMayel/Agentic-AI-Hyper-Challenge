@@ -1,150 +1,195 @@
-# 🤖 Claims Management System - Complete AI-Powered Solution
+# 🤖 Zurich Claims Management System - AI-Powered Insurance Solution
 
 ## 🎯 Overview
 
-A comprehensive insurance claims management system that automatically processes incoming emails, analyzes claims using AI, and provides a human analyst interface for final decisions and rulings.
+A comprehensive insurance claims management system built with FastAPI backend and Next.js frontend, featuring AI-powered analysis using Google Gemini, automated email processing, document OCR, and a professional analyst dashboard for final decision making.
 
 ## 🚀 Key Features
 
 ### 🤖 **AI-Powered Analysis**
-- **Automatic Email Processing**: Monitors Gmail for claim-related emails
-- **LLM Analysis**: Comprehensive claim analysis using Gemini AI
-- **Document Processing**: OCR and intelligent document analysis
-- **Risk Assessment**: AI-powered risk evaluation and recommendations
+- **Sentiment Analysis**: Comprehensive claim sentiment evaluation with risk scoring
+- **Traffic Light System**: Visual risk assessment (Red/Yellow/Green)
+- **Smart Recommendations**: AI-powered suggestions for investigation steps
+- **Document Intelligence**: Advanced OCR with Gemini Vision API
+- **Fraud Detection**: Risk factor identification and analysis
 
-### 👤 **Human Decision Interface**
-- **Analyst Dashboard**: Complete web interface for claim management
-- **Consolidated View**: One record per claim with all information
-- **Final Decision Control**: Human analyst makes final ruling and decision
-- **Professional Accountability**: All decisions recorded with analyst name
+### 📧 **Automated Email Processing**
+- **Gmail Integration**: Real-time email monitoring and processing
+- **Claim Detection**: Automatic identification of claim-related emails
+- **Smart Categorization**: Email classification by claim type
+- **Auto-Response**: Professional acknowledgment emails
+- **Document Extraction**: Automatic attachment processing
 
-### 📊 **Comprehensive Reporting**
-- **Real-time Statistics**: Dashboard with live claim statistics
-- **Status Tracking**: Complete audit trail of claim processing
-- **Document Management**: Secure storage and retrieval system
+### 👤 **Professional Analyst Dashboard**
+- **Consolidated View**: One record per claim with complete information
+- **Real-time Statistics**: Live dashboard with claim metrics
+- **Interactive Analysis**: AI analysis on-demand for each claim
+- **Decision Interface**: Professional decision-making tools
+- **Status Management**: Complete claim lifecycle tracking
 
-## 🗄️ Database Configuration
+### 📄 **Advanced Document Management**
+- **Multi-format Support**: PDF, images, documents
+- **OCR Processing**: Text extraction with Gemini Vision
+- **Structured Data**: Intelligent data extraction and categorization
+- **Cost Analysis**: Automatic cost identification from documents
+- **Secure Storage**: Google Cloud Storage integration
 
-**Active Database:** `claims_ropj_z7d1`
-- **Host:** dpg-d1k9hmer433s73c9g7mg-a.oregon-postgres.render.com
-- **User:** agent
-- **Status:** ✅ Connected and operational
-- **PostgreSQL Version:** 16.9
+## 🏗️ Technical Architecture
 
-### 📋 Database Schema
+### Backend (FastAPI + Python)
+```
+backend/
+├── app/
+│   ├── api/           # API endpoints
+│   ├── core/          # Database and configuration
+│   ├── models/        # Database models
+│   ├── services/      # Business logic services
+│   └── static/        # Static files (dashboard)
+├── main.py            # FastAPI application
+└── requirements.txt   # Python dependencies
+```
 
-#### 📧 **EMAILS Table**
-Stores all incoming emails with claim-related content.
+**Key Services:**
+- **LLMService**: Google Gemini AI integration
+- **SentimentAnalysisService**: Claim sentiment and risk analysis
+- **EnhancedOCRService**: Document processing with Gemini Vision
+- **EmailProcessor**: Gmail integration and email processing
+- **StorageService**: Google Cloud Storage management
 
-#### 🏷️ **CLAIM_SUBMISSIONS Table**
-Main claims table with comprehensive information:
-- **Claim Number**: Auto-generated unique identifier (CLM-XXXXXXXX)
-- **Customer Information**: Name, email, policy number
-- **Claim Details**: Type, incident description, estimated amount
-- **Status & Priority**: Current status and priority level
-- **AI Analysis**: LLM summary and recommendations
-- **Timestamps**: Creation, updates, and closure dates
+### Frontend (Next.js + React)
+```
+frontend/
+├── pages/             # Next.js pages
+├── styles/            # CSS and styling
+├── components/        # React components
+└── package.json       # Node.js dependencies
+```
 
-#### 📄 **DOCUMENTS_AGENT_OCR Table**
-Document management with OCR processing:
-- **File Information**: Original filename, type, size
-- **Storage**: Google Cloud Storage integration
-- **OCR Results**: Extracted text and structured data
-- **Processing Status**: Document analysis completion
+**Key Pages:**
+- **Dashboard**: Main analyst interface
+- **Claim Form**: Customer claim submission
+- **Analyst Dashboard**: Professional claim management
+- **Login**: Secure authentication
 
-#### 📈 **CLAIM_STATUS_UPDATES Table**
-Complete audit trail of status changes:
-- **Status History**: Old and new status tracking
-- **Analyst Accountability**: Human analyst name and reasoning
-- **Timestamps**: Complete change history
+### Database (PostgreSQL + SQLite Fallback)
+- **Primary**: PostgreSQL on Render
+- **Fallback**: SQLite for local development
+- **Auto-sync**: Automatic data synchronization
+- **Schema Migration**: Alembic for database versioning
 
-#### 📊 **DASHBOARD_STATS Table**
-Real-time statistics for the analyst dashboard.
+## 🗄️ Database Schema
 
-## 🔧 Technical Architecture
+### Core Tables
 
-### Backend (FastAPI)
-- **Email Processing**: Gmail API integration with OAuth
-- **AI Analysis**: Gemini API for comprehensive claim analysis
-- **Document Storage**: Google Cloud Storage integration
-- **Database**: PostgreSQL with SQLAlchemy ORM
-- **Scheduler**: Automated email processing every minute
+#### 📧 **emails**
+```sql
+- id: Primary key
+- subject: Email subject
+- sender: Sender email
+- body: Email content
+- received_at: Timestamp
+- is_processed: Processing status
+- claim_type: Detected claim type
+```
 
-### Frontend (Web Interface)
-- **Analyst Dashboard**: Complete web interface
-- **Real-time Updates**: Live statistics and claim status
-- **Responsive Design**: Works on desktop and mobile
-- **Interactive Features**: Analysis, decision making, email sending
+#### 🏷️ **claim_submissions**
+```sql
+- id: Primary key
+- claim_number: Auto-generated (CLM-XXXXXXXX)
+- customer_name: Customer information
+- customer_email: Contact email
+- policy_number: Insurance policy
+- claim_type: Type of claim
+- incident_description: Claim details
+- estimated_amount: Claim amount
+- status: Current status
+- priority: Priority level
+- llm_summary: AI analysis summary
+- llm_recommendation: AI recommendations
+- email_id: Related email reference
+```
 
-### AI Integration
-- **Comprehensive Analysis**: Multi-dimensional claim evaluation
-- **Risk Assessment**: Fraud detection and risk evaluation
-- **Document Analysis**: OCR and intelligent document processing
-- **Recommendation Engine**: AI-powered suggestions for human review
+#### 📄 **document_agent_ocr**
+```sql
+- id: Primary key
+- claim_submission_id: Claim reference
+- original_filename: File name
+- file_type: Document type
+- file_size: File size
+- document_type: Classified type
+- storage_url: Cloud storage URL
+- is_processed: Processing status
+- ocr_text: Extracted text
+- structured_data: JSON structured data
+- inferred_costs: Extracted costs
+```
 
-## 🎯 Human Decision Process
+#### 📊 **dashboard_stats**
+```sql
+- id: Primary key
+- total_claims: Total count
+- pending_claims: Pending count
+- approved_claims: Approved count
+- rejected_claims: Rejected count
+- closed_claims: Closed count
+- total_amount_requested: Financial summary
+- total_amount_approved: Approved amounts
+- last_updated: Timestamp
+```
 
-### AI Recommendation Only
-- **LLM Analysis**: Provides comprehensive analysis and suggestions
-- **No Final Decisions**: AI does NOT make final claim decisions
-- **Human Control**: All final decisions made by human analysts
+## 🔧 API Endpoints
 
-### Human Analyst Interface
-- **Final Decision Button**: Clear interface for human ruling
-- **Professional Reasoning**: Required field for decision justification
-- **Accountability**: Analyst name recorded with all decisions
-- **Validation**: System ensures complete human input
+### Core Endpoints
+```
+GET    /health                    # Health check
+GET    /api/analyst/claims        # List all claims
+GET    /api/analyst/dashboard/stats # Dashboard statistics
+POST   /api/analyst/claims/{id}/analyze # AI analysis
+PUT    /api/analyst/claims/{id}/status # Update status
+GET    /api/analyst/emails        # List processed emails
+POST   /api/analyst/claims/{id}/documents # Upload documents
+GET    /api/analyst/claims/{id}/documents # List documents
+```
 
-### Decision Workflow
-1. **Email Received**: System automatically processes incoming emails
-2. **AI Analysis**: LLM provides comprehensive analysis and recommendations
-3. **Human Review**: Analyst reviews AI analysis and claim details
-4. **Final Decision**: Human analyst makes final ruling and decision
-5. **Documentation**: Complete audit trail with reasoning and accountability
+### Frontend Routes
+```
+/                    # Landing page
+/login               # Authentication
+/dashboard           # Customer dashboard
+/claim-form          # Claim submission form
+/analyst             # Analyst dashboard (backend)
+```
 
-## 📊 Dashboard Features
+## 🎯 AI Analysis Features
 
-### Consolidated Claim View
-- **One Record Per Claim**: Complete information in single row
-- **Visual Indicators**: Color-coded status and priority
-- **AI Recommendations**: Display of AI analysis results
-- **Quick Actions**: Direct access to analysis and decision making
+### Sentiment Analysis
+- **Risk Scoring**: 0.0-1.0 risk assessment
+- **Traffic Light**: Visual risk indicators
+- **Priority Levels**: Low/Medium/High/Urgent
+- **Confidence Scoring**: AI confidence levels
 
-### Real-time Statistics
-- **Total Claims**: Count of all processed claims
-- **Status Breakdown**: Claims by current status
-- **Financial Summary**: Total amounts requested and approved
-- **Processing Metrics**: Email and document processing statistics
+### Document Intelligence
+- **Multi-format OCR**: PDF, images, documents
+- **Structured Extraction**: Names, dates, amounts, addresses
+- **Cost Analysis**: Automatic cost identification
+- **Document Classification**: Smart categorization
 
-### Interactive Features
-- **🤖 AI Analysis**: Comprehensive claim analysis
-- **👁️ View Details**: Complete claim information
-- **✅ Final Decision**: Human analyst decision interface
-- **📝 Dictation**: Professional dictation creation
-- **📧 Email Management**: Closure email sending
-
-## 🔐 Security & Compliance
-
-### Data Protection
-- **Secure Storage**: Google Cloud Storage with encryption
-- **Database Security**: PostgreSQL with proper access controls
-- **API Security**: FastAPI with input validation and sanitization
-
-### Compliance
-- **Audit Trail**: Complete tracking of all decisions and changes
-- **Analyst Accountability**: All decisions recorded with analyst name
-- **Data Privacy**: Proper handling of customer information
+### Recommendation Engine
+- **Investigation Steps**: Suggested actions
+- **Documentation Needs**: Required documents
+- **Communication Strategy**: Recommended approach
+- **Escalation Logic**: When to escalate
 
 ## 🚀 Deployment
 
-### Environment Variables Required
+### Environment Variables
 ```bash
 # Database
 DATABASE_URL=postgresql://...
 
 # Google Cloud
 GOOGLE_APPLICATION_CREDENTIALS_JSON=...
-GOOGLE_CLOUD_STORAGE_BUCKET=...
+GOOGLE_CLOUD_STORAGE_BUCKET=claims-documents-zurich-ai
 
 # AI Services
 GEMINI_API_KEY=...
@@ -157,55 +202,112 @@ GMAIL_TOKEN_JSON=...
 SECRET_KEY=...
 ```
 
-### Production Deployment
-- **Render**: Cloud platform for backend and frontend
-- **PostgreSQL**: Managed database service
-- **Google Cloud**: Storage and AI services
-- **Gmail API**: Email processing integration
+### Production URLs
+- **Backend API**: https://zurich-claims-api.onrender.com
+- **Frontend**: https://zurich-claims-frontend.onrender.com
+- **Analyst Dashboard**: https://zurich-claims-api.onrender.com/analyst
+
+### Local Development
+```bash
+# Backend
+cd backend
+python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+# Frontend
+cd frontend
+npm run dev
+```
+
+## 📊 Supported Claim Types
+
+### Insurance Coverage Types
+- **AUTO_INSURANCE**: Vehicle-related claims
+- **HOME_INSURANCE**: Property damage claims
+- **TRAVEL_INSURANCE**: Travel-related incidents
+- **HEALTH_INSURANCE**: Medical claims
+- **LIFE_INSURANCE**: Life insurance claims
+- **MEDICAL_INSURANCE**: Medical expenses
+- **HOTEL_INSURANCE**: Hotel-related incidents
+- **OTHER**: Miscellaneous claims
+
+### Document Types
+- **POLICE_REPORT**: Law enforcement reports
+- **MEDICAL_REPORT**: Medical documentation
+- **RECEIPT**: Financial receipts
+- **INVOICE**: Billing documents
+- **INSURANCE_POLICY**: Policy documents
+- **DRIVERS_LICENSE**: Identification
+- **PASSPORT**: Travel documents
+- **MEDICAL_CERTIFICATE**: Medical certificates
+- **TRAVEL_ITINERARY**: Travel plans
+- **HOTEL_RECEIPT**: Accommodation receipts
+- **FLIGHT_TICKET**: Air travel documents
+- **CAR_RENTAL_AGREEMENT**: Vehicle rental
+- **OTHER**: Miscellaneous documents
+
+## 🔐 Security Features
+
+### Data Protection
+- **Encrypted Storage**: Google Cloud Storage encryption
+- **Secure Database**: PostgreSQL with access controls
+- **API Security**: FastAPI with input validation
+- **Authentication**: Secure login system
+
+### Compliance
+- **Audit Trail**: Complete decision tracking
+- **Analyst Accountability**: All decisions recorded
+- **Data Privacy**: Customer information protection
+- **Professional Standards**: Insurance industry compliance
 
 ## 📈 Benefits
 
 ### For Insurance Companies
-- **Automated Processing**: 70-80% reduction in manual review time
-- **AI-Powered Insights**: Better decision quality and risk assessment
-- **Compliance Assurance**: Automated compliance checks and documentation
-- **Scalability**: Handle high volume of claims efficiently
+- **70-80% Time Reduction**: Automated processing
+- **AI-Powered Insights**: Better decision quality
+- **Compliance Assurance**: Automated documentation
+- **Scalability**: High-volume claim handling
 
 ### For Analysts
-- **Comprehensive Tools**: All information and analysis in one interface
-- **Professional Support**: AI recommendations to support decisions
-- **Efficiency**: Streamlined workflow with automated processing
-- **Accountability**: Clear audit trail for all decisions
+- **Comprehensive Tools**: All information in one interface
+- **AI Support**: Intelligent recommendations
+- **Efficiency**: Streamlined workflow
+- **Professional Interface**: Modern, responsive design
 
 ### For Customers
-- **Faster Processing**: Quicker claim processing and resolution
-- **Better Communication**: Professional, personalized responses
-- **Transparency**: Clear reasoning for claim decisions
-- **Consistency**: Fair and consistent claim handling
+- **Faster Processing**: Quick claim resolution
+- **Better Communication**: Professional responses
+- **Transparency**: Clear decision reasoning
+- **Consistency**: Fair claim handling
 
 ## 🔮 Future Enhancements
 
 ### Planned Features
-- **Machine Learning**: Historical data training for improved accuracy
-- **Predictive Analytics**: Claim outcome and processing time prediction
-- **Advanced Reporting**: Detailed analytics and reporting dashboards
-- **Mobile App**: Native mobile application for analysts
+- **Machine Learning**: Historical data training
+- **Predictive Analytics**: Outcome prediction
+- **Advanced Reporting**: Detailed analytics
+- **Mobile App**: Native mobile application
 
 ### Integration Opportunities
-- **External Systems**: Integration with other insurance systems
-- **Fraud Detection**: Advanced fraud detection algorithms
-- **Customer Portal**: Self-service portal for claim status
-- **API Expansion**: Public API for third-party integrations
+- **External Systems**: Third-party integrations
+- **Fraud Detection**: Advanced algorithms
+- **Customer Portal**: Self-service features
+- **API Expansion**: Public API access
 
-## 📞 Support
+## 📞 Support & Documentation
 
-For technical support or questions about the system:
-- **Documentation**: Complete system documentation available
-- **API Documentation**: Interactive API docs at `/docs`
+### API Documentation
+- **Interactive Docs**: Available at `/docs`
 - **Health Check**: System status at `/health`
+- **OpenAPI Spec**: Complete API specification
+
+### Technical Support
+- **GitHub Repository**: Complete source code
+- **Deployment Guide**: Step-by-step instructions
+- **Configuration**: Environment setup guide
 
 ---
 
 **Status:** ✅ Production Ready  
-**Last Updated:** December 2024  
-**Version:** 1.0.0
+**Last Updated:** July 2025  
+**Version:** 2.0.0  
+**Technology Stack:** FastAPI, Next.js, PostgreSQL, Google Gemini AI, Google Cloud Storage
