@@ -12,6 +12,10 @@ export default function AnalystDashboard() {
   const [error, setError] = useState(null);
   const [selectedClaim, setSelectedClaim] = useState(null);
   const [analysisResult, setAnalysisResult] = useState(null);
+  const [sentimentAnalysis, setSentimentAnalysis] = useState(null);
+  const [claimDocuments, setClaimDocuments] = useState([]);
+  const [showDocuments, setShowDocuments] = useState(false);
+  const [showSentiment, setShowSentiment] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
@@ -102,6 +106,68 @@ export default function AnalystDashboard() {
     } catch (err) {
       setError('Error updating claim status');
       console.error('Status update error:', err);
+    }
+  };
+
+  const analyzeSentiment = async (claimId) => {
+    try {
+      setSentimentAnalysis(null);
+      const response = await fetch(`${API_BASE_URL}/api/analyst/claims/${claimId}/sentiment-analysis`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        setSentimentAnalysis(result);
+        setShowSentiment(true);
+        setShowDocuments(false);
+      } else {
+        setError('Failed to analyze sentiment');
+      }
+    } catch (err) {
+      setError('Error analyzing sentiment');
+      console.error('Sentiment analysis error:', err);
+    }
+  };
+
+  const loadClaimDocuments = async (claimId) => {
+    try {
+      setClaimDocuments([]);
+      const response = await fetch(`${API_BASE_URL}/api/analyst/claims/${claimId}/documents`);
+      
+      if (response.ok) {
+        const result = await response.json();
+        setClaimDocuments(result.documents || []);
+        setShowDocuments(true);
+        setShowSentiment(false);
+      } else {
+        setError('Failed to load documents');
+      }
+    } catch (err) {
+      setError('Error loading documents');
+      console.error('Documents load error:', err);
+    }
+  };
+
+  const getTrafficLightColor = (trafficLight) => {
+    switch (trafficLight) {
+      case 'red': return 'bg-red-500';
+      case 'yellow': return 'bg-yellow-500';
+      case 'green': return 'bg-green-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 'urgent': return 'bg-red-100 text-red-800';
+      case 'high': return 'bg-orange-100 text-orange-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'low': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -265,6 +331,18 @@ export default function AnalystDashboard() {
                         >
                           Analyze
                         </button>
+                        <button
+                          onClick={() => analyzeSentiment(claim.id)}
+                          className="text-purple-600 hover:text-purple-800 text-sm"
+                        >
+                          Sentiment
+                        </button>
+                        <button
+                          onClick={() => loadClaimDocuments(claim.id)}
+                          className="text-green-600 hover:text-green-800 text-sm"
+                        >
+                          Documents
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -349,6 +427,234 @@ export default function AnalystDashboard() {
                   onClick={() => {
                     setAnalysisResult(null);
                     setSelectedClaim(null);
+                  }}
+                  className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Sentiment Analysis Result */}
+        {sentimentAnalysis && showSentiment && (
+          <div className="mt-8 bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-medium text-gray-900">AI Sentiment Analysis</h2>
+            </div>
+            <div className="px-6 py-4">
+              {sentimentAnalysis.analysis && (
+                <div className="space-y-6">
+                  {/* Traffic Light */}
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-medium text-gray-700">Risk Level:</span>
+                      <div className={`w-4 h-4 rounded-full ${getTrafficLightColor(sentimentAnalysis.analysis.traffic_light)}`}></div>
+                      <span className="text-sm text-gray-600 capitalize">{sentimentAnalysis.analysis.traffic_light}</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-medium text-gray-700">Priority:</span>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPriorityColor(sentimentAnalysis.analysis.priority_level)}`}>
+                        {sentimentAnalysis.analysis.priority_level}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Scores */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Sentiment Score</h4>
+                      <div className="flex items-center">
+                        <div className="flex-1 bg-gray-200 rounded-full h-2 mr-2">
+                          <div 
+                            className="bg-blue-600 h-2 rounded-full" 
+                            style={{ width: `${(sentimentAnalysis.analysis.sentiment_score || 0) * 100}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm text-gray-600">{(sentimentAnalysis.analysis.sentiment_score || 0) * 100}%</span>
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Risk Score</h4>
+                      <div className="flex items-center">
+                        <div className="flex-1 bg-gray-200 rounded-full h-2 mr-2">
+                          <div 
+                            className="bg-red-600 h-2 rounded-full" 
+                            style={{ width: `${(sentimentAnalysis.analysis.risk_score || 0) * 100}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm text-gray-600">{(sentimentAnalysis.analysis.risk_score || 0) * 100}%</span>
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">AI Confidence</h4>
+                      <div className="flex items-center">
+                        <div className="flex-1 bg-gray-200 rounded-full h-2 mr-2">
+                          <div 
+                            className="bg-green-600 h-2 rounded-full" 
+                            style={{ width: `${(sentimentAnalysis.analysis.ai_confidence || 0) * 100}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm text-gray-600">{(sentimentAnalysis.analysis.ai_confidence || 0) * 100}%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Analysis Details */}
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Sentiment Analysis</h4>
+                      <p className="text-sm text-gray-600">{sentimentAnalysis.analysis.sentiment_analysis}</p>
+                    </div>
+                    
+                    {sentimentAnalysis.analysis.risk_factors && sentimentAnalysis.analysis.risk_factors.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Risk Factors</h4>
+                        <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+                          {sentimentAnalysis.analysis.risk_factors.map((factor, index) => (
+                            <li key={index}>{factor}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {sentimentAnalysis.analysis.recommendations && (
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-medium text-gray-700">AI Recommendations</h4>
+                        
+                        {sentimentAnalysis.analysis.recommendations.immediate_actions && (
+                          <div>
+                            <h5 className="text-xs font-medium text-gray-600 mb-1">Immediate Actions</h5>
+                            <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+                              {sentimentAnalysis.analysis.recommendations.immediate_actions.map((action, index) => (
+                                <li key={index}>{action}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {sentimentAnalysis.analysis.recommendations.investigation_steps && (
+                          <div>
+                            <h5 className="text-xs font-medium text-gray-600 mb-1">Investigation Steps</h5>
+                            <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+                              {sentimentAnalysis.analysis.recommendations.investigation_steps.map((step, index) => (
+                                <li key={index}>{step}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {sentimentAnalysis.analysis.recommendations.documentation_needed && (
+                          <div>
+                            <h5 className="text-xs font-medium text-gray-600 mb-1">Required Documentation</h5>
+                            <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+                              {sentimentAnalysis.analysis.recommendations.documentation_needed.map((doc, index) => (
+                                <li key={index}>{doc}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <h5 className="text-xs font-medium text-gray-600 mb-1">Communication Strategy</h5>
+                            <p className="text-sm text-gray-600">{sentimentAnalysis.analysis.recommendations.communication_strategy}</p>
+                          </div>
+                          <div>
+                            <h5 className="text-xs font-medium text-gray-600 mb-1">Processing Time</h5>
+                            <p className="text-sm text-gray-600">{sentimentAnalysis.analysis.recommendations.estimated_processing_time}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button
+                      onClick={() => {
+                        setSentimentAnalysis(null);
+                        setShowSentiment(false);
+                      }}
+                      className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Documents List */}
+        {showDocuments && claimDocuments.length > 0 && (
+          <div className="mt-8 bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-medium text-gray-900">Claim Documents ({claimDocuments.length})</h2>
+            </div>
+            <div className="px-6 py-4">
+              <div className="space-y-4">
+                {claimDocuments.map((doc) => (
+                  <div key={doc.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-900">{doc.original_filename}</h4>
+                          <p className="text-xs text-gray-500">{doc.document_type} • {(doc.file_size / 1024).toFixed(1)} KB</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          doc.is_processed ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {doc.is_processed ? 'Processed' : 'Pending'}
+                        </span>
+                        {doc.inferred_costs && (
+                          <span className="text-xs text-gray-600">Cost: {doc.inferred_costs}</span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {doc.ocr_text && (
+                      <div className="mt-3">
+                        <h5 className="text-xs font-medium text-gray-700 mb-2">Extracted Text</h5>
+                        <div className="bg-gray-50 p-3 rounded text-sm text-gray-600 max-h-32 overflow-y-auto">
+                          {doc.ocr_text}
+                        </div>
+                      </div>
+                    )}
+
+                    {doc.structured_data && Object.keys(doc.structured_data).length > 0 && (
+                      <div className="mt-3">
+                        <h5 className="text-xs font-medium text-gray-700 mb-2">Structured Data</h5>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                          {Object.entries(doc.structured_data).map(([key, values]) => (
+                            <div key={key} className="bg-gray-50 p-2 rounded">
+                              <span className="font-medium text-gray-700">{key}:</span>
+                              <div className="text-gray-600">
+                                {Array.isArray(values) ? values.slice(0, 2).join(', ') : values}
+                                {Array.isArray(values) && values.length > 2 && ` (+${values.length - 2} more)`}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              
+              <div className="flex justify-end mt-4">
+                <button
+                  onClick={() => {
+                    setShowDocuments(false);
+                    setClaimDocuments([]);
                   }}
                   className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"
                 >
